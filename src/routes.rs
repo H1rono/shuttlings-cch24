@@ -15,7 +15,8 @@ pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::
     hello_bird(state.clone())
         .or(seek(state.clone()))
         .or(ipv4_dest(state.clone()))
-        .or(ipv4_key(state))
+        .or(ipv4_key(state.clone()))
+        .or(ipv6_dest(state))
 }
 
 fn hello_bird(
@@ -49,4 +50,14 @@ fn ipv4_key(
         .and(warp::get())
         .and(query)
         .and_then(handlers::ipv4_key)
+}
+
+fn ipv6_dest(
+    _state: State,
+) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+    let query = warp::query::<handlers::ipv6_dest::Query>();
+    warp::path!("2" / "v6" / "dest")
+        .and(warp::get())
+        .and(query)
+        .and_then(handlers::ipv6_dest)
 }

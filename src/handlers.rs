@@ -1,11 +1,12 @@
 use std::convert::Infallible;
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr, Ipv6Addr};
 use std::sync::Arc;
 
 use warp::{http, hyper};
 
 pub(crate) mod ipv4_dest;
 pub(crate) mod ipv4_key;
+pub(crate) mod ipv6_dest;
 pub(crate) mod seek;
 
 type Response<B = hyper::Body> = http::Response<B>;
@@ -46,6 +47,18 @@ pub async fn ipv4_key(query: ipv4_key::Query) -> Result<Response, Infallible> {
     let (from, to) = query.octets();
     let dest = ipv4_octets_zip_with!(u8::wrapping_sub => (to, from));
     let dest = Ipv4Addr::from(dest);
+    let body = hyper::Body::from(format!("{dest}"));
+    let res = http::Response::builder()
+        .status(http::StatusCode::OK)
+        .body(body)
+        .unwrap();
+    Ok(res)
+}
+
+pub async fn ipv6_dest(query: ipv6_dest::Query) -> Result<Response, Infallible> {
+    let (from, key) = query.to_bits();
+    let dest = from ^ key;
+    let dest = Ipv6Addr::from_bits(dest);
     let body = hyper::Body::from(format!("{dest}"));
     let res = http::Response::builder()
         .status(http::StatusCode::OK)
