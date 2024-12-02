@@ -1541,6 +1541,7 @@ dependencies = [
 name = "shuttlings-cch24"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "shuttle-runtime",
  "shuttle-warp",
  "tokio",
