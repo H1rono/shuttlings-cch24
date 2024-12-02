@@ -1,4 +1,3 @@
-use std::convert::Infallible;
 use std::sync::Arc;
 
 use warp::{Filter, Reply};
@@ -16,17 +15,10 @@ pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::
     hello_bird(state.clone()).or(seek(state))
 }
 
-fn with_state(state: State) -> impl Filter<Extract = (State,), Error = Infallible> + Clone {
-    warp::any().map(move || state.clone())
-}
-
 pub fn hello_bird(
-    state: State,
+    _state: State,
 ) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
-    warp::path!()
-        .and(warp::get())
-        .and(with_state(state))
-        .map(|_s| "Hello, bird!")
+    warp::path!().and(warp::get()).map(|| "Hello, bird!")
 }
 
 pub fn seek(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
