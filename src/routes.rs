@@ -1,13 +1,15 @@
 use std::convert::Infallible;
 use std::sync::Arc;
 
-use warp::{http, hyper, Filter, Reply};
+use warp::{Filter, Reply};
+
+use crate::handlers;
 
 mod state;
 
 #[derive(Debug, Clone)]
 pub struct State {
-    inner: Arc<state::Inner>,
+    seek: Arc<handlers::seek::State>,
 }
 
 pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
@@ -30,15 +32,6 @@ pub fn hello_bird(
 pub fn seek(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
     warp::path!("-1" / "seek")
         .and(warp::get())
-        .and(with_state(state))
-        .and_then(seek_fn)
-}
-
-async fn seek_fn(state: State) -> Result<http::Response<hyper::Body>, Infallible> {
-    let res = http::Response::builder()
-        .status(http::StatusCode::FOUND)
-        .header(http::header::LOCATION, state.inner.seek_url.clone())
-        .body(hyper::Body::empty())
-        .unwrap();
-    Ok(res)
+        .map(move || Arc::clone(&state.seek))
+        .and_then(handlers::seek)
 }

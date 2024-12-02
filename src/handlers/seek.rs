@@ -1,15 +1,25 @@
-use std::{borrow::Cow, sync::Arc};
+use std::borrow::Cow;
 
 use anyhow::Context;
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
-pub struct Builder {
-    seek_url: Option<String>,
+#[derive(Debug, Clone)]
+pub struct State {
+    pub(super) seek_url: String,
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
+pub struct Builder {
+    pub(super) seek_url: Option<String>,
+}
+
+#[allow(dead_code)]
 impl Builder {
     pub fn new() -> Self {
         Default::default()
+    }
+
+    pub fn set_seek_url(self, value: Option<String>) -> Self {
+        Self { seek_url: value }
     }
 
     pub fn seek_url<'s, S>(self, value: S) -> Self
@@ -22,20 +32,14 @@ impl Builder {
         }
     }
 
-    pub fn build(self) -> anyhow::Result<super::State> {
-        let Self { seek_url } = self;
-        let seek_state = crate::handlers::seek::State::builder()
-            .set_seek_url(seek_url)
-            .build()
-            .context("failed to build seek state")?;
-        let state = super::State {
-            seek: Arc::new(seek_state),
-        };
+    pub fn build(self) -> anyhow::Result<State> {
+        let seek_url = self.seek_url.context("seek_url not set")?;
+        let state = State { seek_url };
         Ok(state)
     }
 }
 
-impl super::State {
+impl State {
     pub fn builder() -> Builder {
         Builder::new()
     }

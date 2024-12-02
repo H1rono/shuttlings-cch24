@@ -2,6 +2,7 @@ use anyhow::Context;
 use warp::Filter;
 use warp::Reply;
 
+mod handlers;
 mod routes;
 
 #[shuttle_runtime::main]
