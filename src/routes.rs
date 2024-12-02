@@ -12,7 +12,9 @@ pub struct State {
 }
 
 pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
-    hello_bird(state.clone()).or(seek(state))
+    hello_bird(state.clone())
+        .or(seek(state.clone()))
+        .or(ipv4_dest(state))
 }
 
 fn hello_bird(
@@ -26,4 +28,14 @@ fn seek(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::Reje
         .and(warp::get())
         .map(move || Arc::clone(&state.seek))
         .and_then(handlers::seek)
+}
+
+fn ipv4_dest(
+    _state: State,
+) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+    let query = warp::query::<handlers::ipv4_dest::Query>();
+    warp::path!("2" / "dest")
+        .and(warp::get())
+        .and(query)
+        .and_then(handlers::ipv4_dest)
 }
