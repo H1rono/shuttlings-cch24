@@ -46,9 +46,9 @@ pub async fn ipv4_dest(query: ipv4_dest::Query) -> Result<Response, Infallible> 
 
 pub async fn ipv4_key(query: ipv4_key::Query) -> Result<Response, Infallible> {
     let (from, to) = query.octets();
-    let dest = ipv4_octets_zip_with!(u8::wrapping_sub => (to, from));
-    let dest = Ipv4Addr::from(dest);
-    let body = hyper::Body::from(format!("{dest}"));
+    let key = ipv4_octets_zip_with!(u8::wrapping_sub => (to, from));
+    let key = Ipv4Addr::from(key);
+    let body = hyper::Body::from(format!("{key}"));
     let res = http::Response::builder()
         .status(http::StatusCode::OK)
         .body(body)
@@ -70,7 +70,7 @@ pub async fn ipv6_dest(query: ipv6_dest::Query) -> Result<Response, Infallible> 
 
 pub async fn ipv6_key(query: ipv6_key::Query) -> Result<Response, Infallible> {
     let (from, to) = query.to_bits();
-    let key = from ^ to;
+    let key = to ^ from;
     let key = Ipv6Addr::from_bits(key);
     let body = hyper::Body::from(format!("{key}"));
     let res = http::Response::builder()
