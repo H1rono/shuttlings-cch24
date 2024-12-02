@@ -15,13 +15,13 @@ pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::
     hello_bird(state.clone()).or(seek(state))
 }
 
-pub fn hello_bird(
+fn hello_bird(
     _state: State,
 ) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
     warp::path!().and(warp::get()).map(|| "Hello, bird!")
 }
 
-pub fn seek(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+fn seek(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
     warp::path!("-1" / "seek")
         .and(warp::get())
         .map(move || Arc::clone(&state.seek))
