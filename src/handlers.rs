@@ -31,9 +31,7 @@ macro_rules! ipv4_octets_zip_with {
 }
 
 pub async fn ipv4_dest(query: ipv4_dest::Query) -> Result<Response, Infallible> {
-    let ipv4_dest::Query { from, key } = query;
-    let from = from.octets();
-    let key = key.octets();
+    let (from, key) = query.octets();
     let dest = ipv4_octets_zip_with!(u8::wrapping_add => (from, key));
     let dest = Ipv4Addr::from(dest);
     let body = hyper::Body::from(format!("{dest}"));

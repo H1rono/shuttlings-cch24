@@ -7,3 +7,10 @@ pub struct Query {
     pub(super) from: Ipv4Addr,
     pub(super) key: Ipv4Addr,
 }
+
+impl Query {
+    pub(super) fn octets(&self) -> ([u8; 4], [u8; 4]) {
+        let Self { from, key } = self;
+        (from.octets(), key.octets())
+    }
+}
