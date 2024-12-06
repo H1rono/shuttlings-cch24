@@ -95,6 +95,7 @@ pub async fn manifest_order(
             .unwrap();
         return Ok(res);
     }
+    tracing::info!(?manifest);
     let orders = manifest
         .package
         .as_ref()

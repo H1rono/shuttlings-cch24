@@ -77,7 +77,9 @@ impl ProperOrder {
                 let item = table.get("item")?.as_str()?.to_string();
                 let quantity = table.get("quantity")?.as_integer()?;
                 let quantity = u32::try_from(quantity).ok()?;
-                Some(Self { item, quantity })
+                let o = Self { item, quantity };
+                tracing::info!(order = ?o);
+                Some(o)
             })
             .collect();
         Some(orders)
