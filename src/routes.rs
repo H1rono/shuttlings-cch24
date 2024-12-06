@@ -82,5 +82,16 @@ fn manifest_order(
         .and(warp::post())
         .and(self::toml::toml_body())
         .and_then(handlers::manifest_order)
-        .recover(self::toml::recover)
+        .recover(|r: warp::Rejection| async move {
+            use self::toml::{InvalidBodyEncoding, RejectToml};
+            if let Some(e) = r.find::<InvalidBodyEncoding>() {
+                let reply = e.recover_with(|_| "Invalid manifest".to_string()).await;
+                return Ok(reply);
+            }
+            if let Some(e) = r.find::<RejectToml>() {
+                let reply = e.recover_with(|_| "Invalid manifest".to_string()).await;
+                return Ok(reply);
+            }
+            Err(r)
+        })
 }

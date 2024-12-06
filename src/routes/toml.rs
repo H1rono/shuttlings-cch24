@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::str::Utf8Error;
 
 use bytes::Bytes;
