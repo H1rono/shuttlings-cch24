@@ -5,6 +5,7 @@ use warp::{Filter, Reply};
 use crate::handlers;
 
 mod state;
+mod toml;
 
 #[derive(Debug, Clone)]
 pub struct State {
