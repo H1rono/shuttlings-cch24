@@ -18,16 +18,23 @@ impl InvalidBodyEncoding {
         reject::custom(Self::from(source))
     }
 
-    pub async fn recover(&self) -> http::Response<hyper::Body> {
+    pub async fn recover_with<F>(&self, message: F) -> http::Response<hyper::Body>
+    where
+        F: FnOnce(&Self) -> String,
+    {
         {
             let error = self as &(dyn std::error::Error);
             tracing::error!(error);
         }
-        let message = format!("{self}");
+        let message = message(self);
         http::Response::builder()
             .status(http::StatusCode::BAD_REQUEST)
             .body(hyper::Body::from(message))
             .unwrap()
+    }
+
+    pub async fn recover(&self) -> http::Response<hyper::Body> {
+        self.recover_with(|s| format!("{s}")).await
     }
 }
 
@@ -45,16 +52,23 @@ impl RejectToml {
         reject::custom(Self::from(source))
     }
 
-    pub async fn recover(&self) -> http::Response<hyper::Body> {
+    pub async fn recover_with<F>(&self, message: F) -> http::Response<hyper::Body>
+    where
+        F: FnOnce(&Self) -> String,
+    {
         {
             let error = self as &(dyn std::error::Error);
             tracing::error!(error);
         }
-        let message = format!("{self}");
+        let message = message(self);
         http::Response::builder()
             .status(http::StatusCode::BAD_REQUEST)
             .body(hyper::Body::from(message))
             .unwrap()
+    }
+
+    pub async fn recover(&self) -> http::Response<hyper::Body> {
+        self.recover_with(|s| format!("{s}")).await
     }
 }
 
