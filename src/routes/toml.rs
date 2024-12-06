@@ -19,7 +19,10 @@ impl InvalidBodyEncoding {
     }
 
     pub async fn recover(&self) -> http::Response<hyper::Body> {
-        eprintln!("{self:?}");
+        {
+            let error = self as &(dyn std::error::Error);
+            tracing::error!(error);
+        }
         let message = format!("{self}");
         http::Response::builder()
             .status(http::StatusCode::BAD_REQUEST)
@@ -43,7 +46,10 @@ impl RejectToml {
     }
 
     pub async fn recover(&self) -> http::Response<hyper::Body> {
-        eprintln!("{self:?}");
+        {
+            let error = self as &(dyn std::error::Error);
+            tracing::error!(error);
+        }
         let message = format!("{self}");
         http::Response::builder()
             .status(http::StatusCode::BAD_REQUEST)
