@@ -71,3 +71,16 @@ impl fmt::Display for ProperOrder {
         write!(f, "{item}: {quantity}")
     }
 }
+
+pub(super) fn manifest_key_included(state: &State, manifest: &Manifest) -> bool {
+    let keyword = &state.manifest_keyword;
+    let manifest_keywords = manifest.package.as_ref().and_then(|p| p.keywords.as_ref());
+    let Some(manifest_keywords) = manifest_keywords else {
+        return false;
+    };
+    let Some(manifest_keywords) = manifest_keywords.as_ref().as_local() else {
+        // TODO
+        return false;
+    };
+    manifest_keywords.contains(keyword)
+}

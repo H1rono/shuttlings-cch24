@@ -81,8 +81,19 @@ pub async fn ipv6_key(query: ipv6_key::Query) -> Result<Response, Infallible> {
     Ok(res)
 }
 
-pub async fn manifest_order(manifest: manifest::Manifest) -> Result<Response, Infallible> {
+pub async fn manifest_order(
+    state: Arc<manifest::State>,
+    manifest: manifest::Manifest,
+) -> Result<Response, Infallible> {
     use manifest::ProperOrder;
+    if !manifest::manifest_key_included(&state, &manifest) {
+        let body = "Magic keyword not provided".to_string();
+        let res = Response::builder()
+            .status(http::StatusCode::BAD_REQUEST)
+            .body(hyper::Body::from(body))
+            .unwrap();
+        return Ok(res);
+    }
     let orders = manifest
         .package
         .and_then(|p| p.metadata)

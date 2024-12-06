@@ -77,10 +77,11 @@ fn ipv6_key(
 }
 
 fn manifest_order(
-    _state: State,
+    state: State,
 ) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
     warp::path!("5" / "manifest")
         .and(warp::post())
+        .map(move || Arc::clone(&state.manifest))
         .and(self::toml::toml_body())
         .and_then(handlers::manifest_order)
         .recover(|r: warp::Rejection| async move {
