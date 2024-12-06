@@ -21,22 +21,22 @@ pub struct Metadata {
 pub type Order = toml::Value;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
-pub(super) struct ProperOrder<'a> {
-    item: &'a str,
+pub(super) struct ProperOrder {
+    item: String,
     quantity: u32,
 }
 
-impl<'a> ProperOrder<'a> {
-    pub(super) fn from_value(value: &'a toml::Value) -> Option<Self> {
+impl ProperOrder {
+    pub(super) fn from_value(value: &toml::Value) -> Option<Self> {
         let table = value.as_table()?;
-        let item = table.get("item")?.as_str()?;
+        let item = table.get("item")?.as_str()?.to_string();
         let quantity = table.get("quantity")?.as_integer()?;
         let quantity = u32::try_from(quantity).ok()?;
         Some(Self { item, quantity })
     }
 }
 
-impl fmt::Display for ProperOrder<'_> {
+impl fmt::Display for ProperOrder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let Self { item, quantity } = self;
         write!(f, "{item}: {quantity}")
