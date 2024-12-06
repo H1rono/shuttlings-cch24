@@ -83,10 +83,14 @@ pub async fn ipv6_key(query: ipv6_key::Query) -> Result<Response, Infallible> {
 
 pub async fn manifest_order(manifest: manifest::Manifest) -> Result<Response, Infallible> {
     use manifest::ProperOrder;
-    let orders = manifest.package.metadata.orders;
+    let orders = manifest
+        .package
+        .and_then(|p| p.metadata)
+        .map(|m| m.orders)
+        .unwrap_or_default();
     let orders = orders
         .iter()
-        .filter_map(|o| ProperOrder::from_value(o).map(|o| o.to_string()))
+        .map(ProperOrder::to_string)
         .collect::<Vec<_>>()
         .join("\n");
     let status = if orders.is_empty() {

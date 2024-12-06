@@ -2,38 +2,20 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
-pub struct Manifest {
-    pub(super) package: Package,
-}
+pub type Manifest = cargo_manifest::Manifest<PackageMetadata>;
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
-pub struct Package {
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub struct PackageMetadata {
     #[serde(default)]
-    pub(super) metadata: Metadata,
+    pub(super) orders: Orders,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
-pub struct Metadata {
-    pub(super) orders: Vec<Order>,
-}
-
-pub type Order = toml::Value;
+pub(super) type Orders = Vec<ProperOrder>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub(super) struct ProperOrder {
     item: String,
     quantity: u32,
-}
-
-impl ProperOrder {
-    pub(super) fn from_value(value: &toml::Value) -> Option<Self> {
-        let table = value.as_table()?;
-        let item = table.get("item")?.as_str()?.to_string();
-        let quantity = table.get("quantity")?.as_integer()?;
-        let quantity = u32::try_from(quantity).ok()?;
-        Some(Self { item, quantity })
-    }
 }
 
 impl fmt::Display for ProperOrder {
