@@ -8,6 +8,7 @@ pub(crate) mod ipv4_dest;
 pub(crate) mod ipv4_key;
 pub(crate) mod ipv6_dest;
 pub(crate) mod ipv6_key;
+pub(crate) mod manifest;
 pub(crate) mod seek;
 
 type Response<B = hyper::Body> = http::Response<B>;
@@ -77,5 +78,23 @@ pub async fn ipv6_key(query: ipv6_key::Query) -> Result<Response, Infallible> {
         .status(http::StatusCode::OK)
         .body(body)
         .unwrap();
+    Ok(res)
+}
+
+pub async fn manifest_order(manifest: manifest::Manifest) -> Result<Response, Infallible> {
+    use manifest::ProperOrder;
+    let orders = manifest.package.metadata.orders;
+    let orders = orders
+        .iter()
+        .filter_map(|o| ProperOrder::from_value(o).map(|o| o.to_string()))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let status = if orders.is_empty() {
+        http::StatusCode::NO_CONTENT
+    } else {
+        http::StatusCode::OK
+    };
+    let body = hyper::Body::from(orders);
+    let res = Response::builder().status(status).body(body).unwrap();
     Ok(res)
 }

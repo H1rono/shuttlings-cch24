@@ -18,7 +18,8 @@ pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::
         .or(ipv4_dest(state.clone()))
         .or(ipv4_key(state.clone()))
         .or(ipv6_dest(state.clone()))
-        .or(ipv6_key(state))
+        .or(ipv6_key(state.clone()))
+        .or(manifest_order(state))
 }
 
 fn hello_bird(
@@ -72,4 +73,14 @@ fn ipv6_key(
         .and(warp::get())
         .and(query)
         .and_then(handlers::ipv6_key)
+}
+
+fn manifest_order(
+    _state: State,
+) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+    warp::path!("5" / "manifest")
+        .and(warp::post())
+        .and(self::toml::toml_body())
+        .and_then(handlers::manifest_order)
+        .recover(self::toml::recover)
 }
