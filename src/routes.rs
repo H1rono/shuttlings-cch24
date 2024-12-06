@@ -10,6 +10,7 @@ mod toml;
 #[derive(Debug, Clone)]
 pub struct State {
     seek: Arc<handlers::seek::State>,
+    manifest: Arc<handlers::manifest::State>,
 }
 
 pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
