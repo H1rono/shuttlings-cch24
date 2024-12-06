@@ -96,8 +96,9 @@ pub async fn manifest_order(
     }
     let orders = manifest
         .package
-        .and_then(|p| p.metadata)
-        .map(|m| m.orders)
+        .as_ref()
+        .and_then(|p| p.metadata.as_ref())
+        .and_then(ProperOrder::from_value)
         .unwrap_or_default();
     let orders = orders
         .iter()

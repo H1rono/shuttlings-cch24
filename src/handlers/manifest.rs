@@ -49,7 +49,7 @@ impl Builder {
     }
 }
 
-pub type Manifest = cargo_manifest::Manifest<PackageMetadata>;
+pub type Manifest = cargo_manifest::Manifest;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub struct PackageMetadata {
@@ -63,6 +63,23 @@ pub(super) type Orders = Vec<ProperOrder>;
 pub(super) struct ProperOrder {
     item: String,
     quantity: u32,
+}
+
+impl ProperOrder {
+    pub(super) fn from_value(value: &toml::Value) -> Option<Vec<Self>> {
+        let orders = value
+            .as_array()?
+            .iter()
+            .filter_map(|o| {
+                let table = o.as_table()?;
+                let item = table.get("item")?.as_str()?.to_string();
+                let quantity = table.get("quantity")?.as_integer()?;
+                let quantity = u32::try_from(quantity).ok()?;
+                Some(Self { item, quantity })
+            })
+            .collect();
+        Some(orders)
+    }
 }
 
 impl fmt::Display for ProperOrder {
