@@ -68,6 +68,8 @@ pub(super) struct ProperOrder {
 impl ProperOrder {
     pub(super) fn from_value(value: &toml::Value) -> Option<Vec<Self>> {
         let orders = value
+            .as_table()?
+            .get("orders")?
             .as_array()?
             .iter()
             .filter_map(|o| {

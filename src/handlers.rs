@@ -86,6 +86,7 @@ pub async fn manifest_order(
     manifest: manifest::Manifest,
 ) -> Result<Response, Infallible> {
     use manifest::ProperOrder;
+
     if !manifest::manifest_key_included(&state, &manifest) {
         let body = "Magic keyword not provided".to_string();
         let res = Response::builder()
