@@ -1,5 +1,6 @@
 use std::convert::Infallible;
 use std::net::{Ipv4Addr, Ipv6Addr};
+use std::ops::ControlFlow;
 use std::sync::Arc;
 
 use warp::{http, hyper};
@@ -9,6 +10,7 @@ pub(crate) mod ipv4_key;
 pub(crate) mod ipv6_dest;
 pub(crate) mod ipv6_key;
 pub(crate) mod manifest;
+pub(crate) mod milk;
 pub(crate) mod seek;
 
 type Response<B = hyper::Body> = http::Response<B>;
@@ -114,5 +116,21 @@ pub async fn manifest_order(
     };
     let body = hyper::Body::from(orders);
     let res = Response::builder().status(status).body(body).unwrap();
+    Ok(res)
+}
+
+pub async fn request_milk(state: Arc<milk::State>) -> Result<Response, Infallible> {
+    use crate::bucket::Liters;
+
+    if let ControlFlow::Break(res) = milk::check_bucket(&state).await {
+        return Ok(res);
+    }
+    let _ = state.bucket.withdraw_by(Liters(1.0)).await;
+    let body = hyper::Body::from("Milk withdrawn\n".to_string());
+    let res = Response::builder()
+        .status(http::StatusCode::OK)
+        .header(http::header::CONTENT_TYPE, "plain/text")
+        .body(body)
+        .unwrap();
     Ok(res)
 }
