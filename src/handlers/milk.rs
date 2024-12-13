@@ -61,7 +61,7 @@ impl State {
     }
 }
 
-pub async fn check_bucket(state: &State) -> ControlFlow<super::Response> {
+pub async fn check_bucket(state: Arc<State>) -> ControlFlow<super::Response> {
     if !state.bucket.is_empty().await {
         return ControlFlow::Continue(());
     }
@@ -72,6 +72,10 @@ pub async fn check_bucket(state: &State) -> ControlFlow<super::Response> {
         .body(body)
         .unwrap();
     ControlFlow::Break(res)
+}
+
+pub async fn withdraw(state: Arc<State>) {
+    state.bucket.withdraw_by(Liters(1.0)).await;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Deserialize, Serialize)]

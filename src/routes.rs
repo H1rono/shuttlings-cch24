@@ -118,9 +118,16 @@ fn milk_factory(
     let request_milk = warp::any()
         .map(move || Arc::clone(&s.milk))
         .and_then(handlers::request_milk);
+    let s = state.clone();
     warp::path!("9" / "milk")
         .and(warp::post())
+        .map(move || Arc::clone(&s.milk))
+        .and_then(|m| async move {
+            handlers::milk::withdraw(m).await;
+            Result::<(), std::convert::Infallible>::Ok(())
+        })
         .and(Filter::or(convert_unit, request_milk))
+        .map(|(), r| r)
 }
 
 fn refill_milk(

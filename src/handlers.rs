@@ -120,12 +120,9 @@ pub async fn manifest_order(
 }
 
 pub async fn request_milk(state: Arc<milk::State>) -> Result<Response, Infallible> {
-    use crate::bucket::Liters;
-
-    if let ControlFlow::Break(res) = milk::check_bucket(&state).await {
+    if let ControlFlow::Break(res) = milk::check_bucket(state).await {
         return Ok(res);
     }
-    let _ = state.bucket.withdraw_by(Liters(1.0)).await;
     let body = hyper::Body::from("Milk withdrawn\n".to_string());
     let res = Response::builder()
         .status(http::StatusCode::OK)
@@ -139,7 +136,7 @@ pub async fn convert_milk_unit(
     state: Arc<milk::State>,
     request: milk::Unit,
 ) -> Result<Response, Infallible> {
-    if let ControlFlow::Break(res) = milk::check_bucket(&state).await {
+    if let ControlFlow::Break(res) = milk::check_bucket(state).await {
         return Ok(res);
     }
     let body = serde_json::to_string(&request.convert());
