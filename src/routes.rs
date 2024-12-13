@@ -4,6 +4,7 @@ use warp::{Filter, Reply};
 
 use crate::handlers;
 
+mod json;
 mod reject;
 mod state;
 mod toml;
@@ -106,8 +107,17 @@ fn manifest_order(
 fn milk_factory(
     state: State,
 ) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+    let s = state.clone();
+    let convert_unit = warp::any()
+        .map(move || Arc::clone(&s.milk))
+        .and(json::json_body::<handlers::milk::Unit>())
+        .and_then(handlers::convert_milk_unit)
+        .recover(json::recover);
+    let s = state.clone();
+    let request_milk = warp::any()
+        .map(move || Arc::clone(&s.milk))
+        .and_then(handlers::request_milk);
     warp::path!("9" / "milk")
         .and(warp::post())
-        .map(move || Arc::clone(&state.milk))
-        .and_then(handlers::request_milk)
+        .and(Filter::or(convert_unit, request_milk))
 }
