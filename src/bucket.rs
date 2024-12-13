@@ -9,4 +9,4 @@ pub struct MilkBucket {
 }
 
 pub use milk::Pack as MilkPack;
-pub use unit::{Gallons, Liters};
+pub use unit::{Gallons, Liters, Litres, Pints};

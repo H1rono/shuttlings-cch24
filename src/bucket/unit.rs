@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+// MARK: US units
+
 const LITER_PER_GALLON: f32 = 3.78541;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default, Deserialize, Serialize)]
@@ -33,5 +35,43 @@ impl Gallons {
 impl From<Liters> for Gallons {
     fn from(value: Liters) -> Self {
         value.gallons()
+    }
+}
+
+// MARK: UK units
+
+const LITRE_PER_UK_PINT: f32 = 0.568261;
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default, Deserialize, Serialize)]
+#[serde(transparent)]
+pub struct Litres(pub f32);
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default, Deserialize, Serialize)]
+#[serde(transparent)]
+pub struct Pints(pub f32);
+
+impl Litres {
+    pub fn pints(self) -> Pints {
+        let p = self.0 / LITRE_PER_UK_PINT;
+        Pints(p)
+    }
+}
+
+impl From<Pints> for Litres {
+    fn from(value: Pints) -> Self {
+        value.litres()
+    }
+}
+
+impl Pints {
+    pub fn litres(self) -> Litres {
+        let l = self.0 * LITRE_PER_UK_PINT;
+        Litres(l)
+    }
+}
+
+impl From<Litres> for Pints {
+    fn from(value: Litres) -> Self {
+        value.pints()
     }
 }
