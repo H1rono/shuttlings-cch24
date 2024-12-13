@@ -1,58 +1,61 @@
 use std::{borrow::Cow, sync::Arc};
 
-use anyhow::Context;
-
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
-pub struct Builder {
-    seek_url: Option<String>,
-    manifest_keyword: Option<String>,
+pub struct Builder<SeekUrl = (), ManifestKeyword = ()> {
+    seek_url: SeekUrl,
+    manifest_keyword: ManifestKeyword,
 }
 
 impl Builder {
     pub fn new() -> Self {
         Default::default()
     }
+}
 
-    pub fn seek_url<'s, S>(self, value: S) -> Self
+impl<SeekUrl, ManifestKeyword> Builder<SeekUrl, ManifestKeyword> {
+    pub fn seek_url<'s, S>(self, value: S) -> Builder<String, ManifestKeyword>
     where
         S: Into<Cow<'s, str>>,
     {
+        let Self {
+            manifest_keyword, ..
+        } = self;
         let seek_url = value.into().into_owned();
-        Self {
-            seek_url: Some(seek_url),
-            ..self
+        Builder {
+            seek_url,
+            manifest_keyword,
         }
     }
 
-    pub fn manifest_keyword<'s, S>(self, value: S) -> Self
+    pub fn manifest_keyword<'s, S>(self, value: S) -> Builder<SeekUrl, String>
     where
         S: Into<Cow<'s, str>>,
     {
+        let Self { seek_url, .. } = self;
         let manifest_keyword = value.into().into_owned();
-        Self {
-            manifest_keyword: Some(manifest_keyword),
-            ..self
+        Builder {
+            seek_url,
+            manifest_keyword,
         }
     }
+}
 
-    pub fn build(self) -> anyhow::Result<super::State> {
+impl Builder<String, String> {
+    pub fn build(self) -> super::State {
         use crate::handlers::{manifest, seek};
 
         let Self {
             seek_url,
             manifest_keyword,
         } = self;
-        let seek_url = seek_url.context("state seek_url not set")?;
-        let manifest_keyword = manifest_keyword.context("state manifest_keyword not set")?;
         let seek_state = seek::State::builder().seek_url(seek_url).build();
         let manifest_state = manifest::State::builder()
             .manifest_keyword(manifest_keyword)
             .build();
-        let state = super::State {
+        super::State {
             seek: Arc::new(seek_state),
             manifest: Arc::new(manifest_state),
-        };
-        Ok(state)
+        }
     }
 }
 
