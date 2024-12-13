@@ -36,7 +36,7 @@ impl RejectJson {
     }
 
     pub async fn recover(&self) -> http::Response<hyper::Body> {
-        self.recover_with(|s| format!("{s}")).await
+        self.recover_with(|_| String::new()).await
     }
 }
 
