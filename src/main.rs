@@ -2,8 +2,7 @@ use anyhow::Context;
 use warp::Filter;
 use warp::Reply;
 
-mod handlers;
-mod routes;
+use shuttlings_cch24 as lib;
 
 #[shuttle_runtime::main]
 async fn main(
@@ -13,10 +12,10 @@ async fn main(
     let manifest_keyword = secrets
         .get("MANIFEST_KEYWORD")
         .context("secret MANIFEST_KEYWORD not set")?;
-    let state = routes::State::builder()
+    let state = lib::routes::State::builder()
         .seek_url(seek_url)
         .manifest_keyword(manifest_keyword)
         .build()?;
-    let route = routes::make(state);
+    let route = lib::routes::make(state);
     Ok(route.boxed().into())
 }
