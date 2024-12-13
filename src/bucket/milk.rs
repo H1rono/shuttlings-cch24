@@ -152,7 +152,6 @@ impl MilkBucket {
         let mut rx = self.inner.withdraw_rx.clone();
         async move {
             loop {
-                rx.mark_changed();
                 let mut interval = tokio::time::interval(duration);
                 interval.tick().await; // ignore immediate tick
                 while !self.is_full().await {
@@ -161,7 +160,6 @@ impl MilkBucket {
                     tracing::debug!("tick");
                 }
                 let Err(err) = rx.changed().await else {
-                    tracing::info!("restart filling");
                     continue;
                 };
                 let err = &err as &dyn std::error::Error;
