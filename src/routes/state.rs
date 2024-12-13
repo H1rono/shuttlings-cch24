@@ -124,11 +124,10 @@ impl super::State {
     }
 
     pub fn bg_task(&self) -> impl Future<Output = ()> + Send + 'static {
-        use crate::bucket::Liters;
-        use crate::handlers::milk::RefillRate;
+        use crate::bucket::{milk, Liters};
 
         // FIXME: expose configuration
-        let rate = RefillRate::per_sec(Liters(1.0));
+        let rate = milk::RefillRate::per_sec(Liters(1.0));
         self.milk.refill_task(rate)
     }
 }

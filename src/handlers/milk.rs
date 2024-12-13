@@ -1,11 +1,10 @@
 use std::future::Future;
 use std::ops::ControlFlow;
-use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use warp::{http, hyper};
 
-use crate::bucket::{Gallons, Liters, Litres, MilkBucket, Pints};
+use crate::bucket::{milk, Gallons, Liters, Litres, MilkBucket, Pints};
 
 #[derive(Debug, Clone)]
 pub struct State {
@@ -56,36 +55,9 @@ impl State {
     }
 }
 
-/// refill by amount per duration
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub struct RefillRate {
-    amount: Liters,
-    duration: Duration,
-}
-
 impl State {
-    #[tracing::instrument(skip(self))]
-    pub fn refill_task(&self, rate: RefillRate) -> impl Future<Output = ()> + Send + 'static {
-        let RefillRate { amount, duration } = rate;
-        let bucket = self.bucket.clone();
-        let mut interval = tokio::time::interval(duration);
-        async move {
-            loop {
-                interval.tick().await;
-                bucket.fill_by(amount).await;
-                tracing::debug!("tick");
-            }
-        }
-    }
-}
-
-impl RefillRate {
-    pub fn new(amount: Liters, duration: Duration) -> Self {
-        Self { amount, duration }
-    }
-
-    pub fn per_sec(amount: Liters) -> Self {
-        Self::new(amount, Duration::from_secs(1))
+    pub fn refill_task(&self, rate: milk::RefillRate) -> impl Future<Output = ()> + Send + 'static {
+        self.bucket.clone().refill_task(rate)
     }
 }
 
