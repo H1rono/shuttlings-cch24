@@ -43,11 +43,11 @@ impl Builder {
             manifest_keyword,
         } = self;
         let seek_url = seek_url.context("state seek_url not set")?;
+        let manifest_keyword = manifest_keyword.context("state manifest_keyword not set")?;
         let seek_state = seek::State::builder().seek_url(seek_url).build();
         let manifest_state = manifest::State::builder()
-            .set_manifest_keyword(manifest_keyword)
-            .build()
-            .context("failed to build manifest state")?;
+            .manifest_keyword(manifest_keyword)
+            .build();
         let state = super::State {
             seek: Arc::new(seek_state),
             manifest: Arc::new(manifest_state),

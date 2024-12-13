@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 use std::fmt;
 
-use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
@@ -16,8 +15,8 @@ impl State {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Hash, Deserialize, Serialize)]
-pub struct Builder {
-    manifest_keyword: Option<String>,
+pub struct Builder<ManifestKeyword = ()> {
+    manifest_keyword: ManifestKeyword,
 }
 
 #[allow(dead_code)]
@@ -26,26 +25,27 @@ impl Builder {
         Self::default()
     }
 
-    pub fn set_manifest_keyword(self, value: Option<String>) -> Self {
-        Self {
-            manifest_keyword: value,
-        }
-    }
+    // pub fn set_manifest_keyword(self, value: Option<String>) -> Self {
+    //     Self {
+    //         manifest_keyword: value,
+    //     }
+    // }
+}
 
-    pub fn manifest_keyword<'s, S>(self, value: S) -> Self
+impl<ManifestKeyword> Builder<ManifestKeyword> {
+    pub fn manifest_keyword<'s, S>(self, value: S) -> Builder<String>
     where
         S: Into<Cow<'s, str>>,
     {
         let manifest_keyword = value.into().into_owned();
-        Self {
-            manifest_keyword: Some(manifest_keyword),
-        }
+        Builder { manifest_keyword }
     }
+}
 
-    pub fn build(self) -> anyhow::Result<State> {
-        let manifest_keyword = self.manifest_keyword.context("manifest_keyword not set")?;
-        let state = State { manifest_keyword };
-        Ok(state)
+impl Builder<String> {
+    pub fn build(self) -> State {
+        let Self { manifest_keyword } = self;
+        State { manifest_keyword }
     }
 }
 
