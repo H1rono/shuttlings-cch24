@@ -9,7 +9,15 @@ use shuttlings_cch24 as lib;
 async fn main(
     #[shuttle_runtime::Secrets] secrets: shuttle_runtime::SecretStore,
 ) -> shuttle_warp::ShuttleWarp<(impl Reply,)> {
-    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
+    let env_filter = EnvFilter::try_from_default_env()
+        .context("from env failed")
+        .or_else(|_| {
+            secrets
+                .get("CCH24_LOG")
+                .context("secret CCH24_LOG not set")
+                .map(EnvFilter::from)
+        })
+        .unwrap_or_else(|_| "info".into());
     tracing_subscriber::fmt().with_env_filter(env_filter).init();
 
     let seek_url = secrets.get("SEEK_URL").context("secret SEEK_URL not set")?;
