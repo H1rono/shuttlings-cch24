@@ -15,6 +15,8 @@ async fn main(
     let state = lib::routes::State::builder()
         .seek_url(seek_url)
         .manifest_keyword(manifest_keyword)
+        .milk_full(5.0)
+        .milk_initial(0.0)
         .build();
     let route = lib::routes::make(state);
     Ok(route.boxed().into())
