@@ -77,6 +77,16 @@ impl State {
     }
 }
 
+impl RefillRate {
+    pub fn new(amount: Liters, duration: Duration) -> Self {
+        Self { amount, duration }
+    }
+
+    pub fn per_sec(amount: Liters) -> Self {
+        Self::new(amount, Duration::from_secs(1))
+    }
+}
+
 pub async fn check_bucket(state: &State) -> ControlFlow<super::Response> {
     if !state.bucket.is_empty().await {
         return ControlFlow::Continue(());
