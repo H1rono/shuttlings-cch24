@@ -4,8 +4,11 @@ use warp::{Filter, Reply};
 
 use crate::handlers;
 
+mod reject;
 mod state;
 mod toml;
+
+use self::reject::InvalidBodyEncoding;
 
 #[derive(Debug, Clone)]
 pub struct State {
@@ -87,7 +90,7 @@ fn manifest_order(
         .and(self::toml::toml_body())
         .and_then(handlers::manifest_order)
         .recover(|r: warp::Rejection| async move {
-            use self::toml::{InvalidBodyEncoding, RejectToml};
+            use self::toml::RejectToml;
             if let Some(e) = r.find::<InvalidBodyEncoding>() {
                 let reply = e.recover_with(|_| "Invalid manifest".to_string()).await;
                 return Ok(reply);
