@@ -36,15 +36,15 @@ impl Builder {
     }
 
     pub fn build(self) -> anyhow::Result<super::State> {
+        use crate::handlers::{manifest, seek};
+
         let Self {
             seek_url,
             manifest_keyword,
         } = self;
-        let seek_state = crate::handlers::seek::State::builder()
-            .set_seek_url(seek_url)
-            .build()
-            .context("failed to build seek state")?;
-        let manifest_state = crate::handlers::manifest::State::builder()
+        let seek_url = seek_url.context("state seek_url not set")?;
+        let seek_state = seek::State::builder().seek_url(seek_url).build();
+        let manifest_state = manifest::State::builder()
             .set_manifest_keyword(manifest_keyword)
             .build()
             .context("failed to build manifest state")?;
