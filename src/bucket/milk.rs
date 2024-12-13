@@ -8,8 +8,8 @@ use super::MilkBucket;
 
 #[derive(Debug)]
 pub(super) struct Inner {
-    full: u32,
-    filled: Mutex<u32>,
+    full: f32,
+    filled: Mutex<f32>,
 }
 
 // MARK: Builder
@@ -41,7 +41,7 @@ impl MilkBucket {
 }
 
 impl<Full, Initial> Builder<Full, Initial> {
-    pub fn full(self, value: u32) -> Builder<u32, Initial> {
+    pub fn full(self, value: f32) -> Builder<f32, Initial> {
         let Self { initial, .. } = self;
         Builder {
             full: value,
@@ -49,7 +49,7 @@ impl<Full, Initial> Builder<Full, Initial> {
         }
     }
 
-    pub fn initial(self, value: u32) -> Builder<Full, u32> {
+    pub fn initial(self, value: f32) -> Builder<Full, f32> {
         let Self { full, .. } = self;
         Builder {
             full,
@@ -58,7 +58,7 @@ impl<Full, Initial> Builder<Full, Initial> {
     }
 }
 
-impl Builder<u32, u32> {
+impl Builder<f32, f32> {
     pub fn build(self) -> MilkBucket {
         let Self { full, initial } = self;
         let filled = Mutex::new(initial);
@@ -71,25 +71,24 @@ impl Builder<u32, u32> {
 
 // MARK: op with pack
 
-pub struct Pack(u32);
+pub struct Pack(f32);
 
 impl MilkBucket {
-    pub async fn fill_by(&self, liters: u32) {
+    pub async fn fill_by(&self, liters: f32) {
         let mut filled = self.inner.filled.lock().await;
         let current = *filled;
-        let after = u32::checked_add(current, liters).unwrap_or(u32::MAX);
-        let after = u32::max(after, self.inner.full);
+        let after = f32::max(current + liters, self.inner.full);
         *filled = after;
     }
 
-    pub async fn withdraw_by(&self, request_liters: u32) -> Pack {
+    pub async fn withdraw_by(&self, request_liters: f32) -> Pack {
         let mut filled = self.inner.filled.lock().await;
         let current = *filled;
         if current >= request_liters {
             *filled = current - request_liters;
             Pack(request_liters)
         } else {
-            Pack(0)
+            Pack(0.0)
         }
     }
 }
