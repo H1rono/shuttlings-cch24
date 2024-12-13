@@ -18,6 +18,7 @@ async fn main(
         .milk_full(5.0)
         .milk_initial(0.0)
         .build();
+    let _bg_task = tokio::spawn(state.bg_task());
     let route = lib::routes::make(state);
     Ok(route.boxed().into())
 }

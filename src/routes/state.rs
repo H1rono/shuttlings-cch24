@@ -1,4 +1,4 @@
-use std::{borrow::Cow, sync::Arc};
+use std::{borrow::Cow, future::Future, sync::Arc};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct Builder<SeekUrl = (), ManifestKeyword = (), MilkFull = (), MilkInitial = ()> {
@@ -121,5 +121,14 @@ impl Builder<String, String, f32, f32> {
 impl super::State {
     pub fn builder() -> Builder {
         Builder::new()
+    }
+
+    pub fn bg_task(&self) -> impl Future<Output = ()> + Send + 'static {
+        use crate::bucket::Liters;
+        use crate::handlers::milk::RefillRate;
+
+        // FIXME: expose configuration
+        let rate = RefillRate::per_sec(Liters(1.0));
+        self.milk.refill_task(rate)
     }
 }
