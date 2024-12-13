@@ -2,14 +2,14 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
-use super::MilkBucket;
+use super::{Liters, MilkBucket};
 
 // MARK: Inner
 
 #[derive(Debug)]
 pub(super) struct Inner {
-    full: f32,
-    filled: Mutex<f32>,
+    full: Liters,
+    filled: Mutex<Liters>,
 }
 
 // MARK: Builder
@@ -41,24 +41,24 @@ impl MilkBucket {
 }
 
 impl<Full, Initial> Builder<Full, Initial> {
-    pub fn full(self, value: f32) -> Builder<f32, Initial> {
+    pub fn full(self, value: f32) -> Builder<Liters, Initial> {
         let Self { initial, .. } = self;
         Builder {
-            full: value,
+            full: Liters(value),
             initial,
         }
     }
 
-    pub fn initial(self, value: f32) -> Builder<Full, f32> {
+    pub fn initial(self, value: f32) -> Builder<Full, Liters> {
         let Self { full, .. } = self;
         Builder {
             full,
-            initial: value,
+            initial: Liters(value),
         }
     }
 }
 
-impl Builder<f32, f32> {
+impl Builder<Liters, Liters> {
     pub fn build(self) -> MilkBucket {
         let Self { full, initial } = self;
         let filled = Mutex::new(initial);
@@ -71,24 +71,28 @@ impl Builder<f32, f32> {
 
 // MARK: op with pack
 
-pub struct Pack(f32);
+pub struct Pack(Liters);
 
 impl MilkBucket {
-    pub async fn fill_by(&self, liters: f32) {
+    pub async fn fill_by<L>(&self, liters: L)
+    where
+        L: Into<Liters>,
+    {
+        let liters: Liters = liters.into();
         let mut filled = self.inner.filled.lock().await;
         let current = *filled;
-        let after = f32::max(current + liters, self.inner.full);
-        *filled = after;
+        let after = f32::max(current.0 + liters.0, self.inner.full.0);
+        *filled = Liters(after);
     }
 
-    pub async fn withdraw_by(&self, request_liters: f32) -> Pack {
+    pub async fn withdraw_by(&self, request_liters: Liters) -> Pack {
         let mut filled = self.inner.filled.lock().await;
         let current = *filled;
         if current >= request_liters {
-            *filled = current - request_liters;
+            *filled = Liters(current.0 - request_liters.0);
             Pack(request_liters)
         } else {
-            Pack(0.0)
+            Pack(Liters(0.0))
         }
     }
 }
