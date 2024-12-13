@@ -74,6 +74,14 @@ impl Builder<Liters, Liters> {
 pub struct Pack(Liters);
 
 impl MilkBucket {
+    pub async fn available(&self) -> Liters {
+        *self.inner.filled.lock().await
+    }
+
+    pub async fn is_empty(&self) -> bool {
+        self.available().await == Liters(0.0)
+    }
+
     pub async fn fill_by<L>(&self, liters: L)
     where
         L: Into<Liters>,
