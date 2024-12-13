@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 
 // MARK: US units
 
-const LITER_PER_GALLON: f32 = 3.78541;
+// https://www.unitconverters.net/volume/gallons-to-liters.htm
+#[allow(clippy::excessive_precision)]
+const LITER_PER_GALLON: f32 = 3.785411784;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default, Deserialize, Serialize)]
 #[serde(transparent)]
@@ -40,7 +42,8 @@ impl From<Liters> for Gallons {
 
 // MARK: UK units
 
-const LITRE_PER_UK_PINT: f32 = 0.568261;
+// https://www.unitconverters.net/volume/pint-uk-to-liter.htm
+const LITRE_PER_UK_PINT: f32 = 0.56826125;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default, Deserialize, Serialize)]
 #[serde(transparent)]
