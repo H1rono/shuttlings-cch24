@@ -166,3 +166,12 @@ pub async fn convert_milk_unit(
         .unwrap();
     Ok(res)
 }
+
+pub async fn refill_milk(state: Arc<milk::State>) -> Result<Response, Infallible> {
+    state.bucket.fulfill().await;
+    let res = Response::builder()
+        .status(http::StatusCode::OK)
+        .body(hyper::Body::empty())
+        .unwrap();
+    Ok(res)
+}

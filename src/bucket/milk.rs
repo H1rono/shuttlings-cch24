@@ -93,6 +93,11 @@ impl MilkBucket {
         *filled = Liters(after);
     }
 
+    pub async fn fulfill(&self) {
+        let mut filled = self.inner.filled.lock().await;
+        *filled = self.inner.full;
+    }
+
     #[tracing::instrument(skip(self))]
     pub async fn withdraw_by(&self, request_liters: Liters) -> Pack {
         let mut filled = self.inner.filled.lock().await;

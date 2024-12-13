@@ -27,6 +27,7 @@ pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::
         .or(ipv6_key(state.clone()))
         .or(manifest_order(state.clone()))
         .or(milk_factory(state.clone()))
+        .or(refill_milk(state.clone()))
 }
 
 fn hello_bird(
@@ -120,4 +121,13 @@ fn milk_factory(
     warp::path!("9" / "milk")
         .and(warp::post())
         .and(Filter::or(convert_unit, request_milk))
+}
+
+fn refill_milk(
+    state: State,
+) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+    warp::path!("9" / "refill")
+        .and(warp::post())
+        .map(move || Arc::clone(&state.milk))
+        .and_then(handlers::refill_milk)
 }
