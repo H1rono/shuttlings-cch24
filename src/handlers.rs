@@ -134,3 +134,35 @@ pub async fn request_milk(state: Arc<milk::State>) -> Result<Response, Infallibl
         .unwrap();
     Ok(res)
 }
+
+pub async fn convert_milk_unit(
+    state: Arc<milk::State>,
+    request: milk::Unit,
+) -> Result<Response, Infallible> {
+    if let ControlFlow::Break(res) = milk::check_bucket(&state).await {
+        return Ok(res);
+    }
+    let body = serde_json::to_string(&request.convert());
+    let (status, content_type, body) = match body {
+        Ok(b) => (
+            http::StatusCode::OK,
+            "application/json",
+            hyper::Body::from(b),
+        ),
+        Err(e) => {
+            let err = &e as &dyn std::error::Error;
+            tracing::error!(err, "failed to serialize unit {request:?}");
+            (
+                http::StatusCode::INTERNAL_SERVER_ERROR,
+                "plain/text",
+                hyper::Body::empty(),
+            )
+        }
+    };
+    let res = Response::builder()
+        .status(status)
+        .header(http::header::CONTENT_TYPE, content_type)
+        .body(body)
+        .unwrap();
+    Ok(res)
+}

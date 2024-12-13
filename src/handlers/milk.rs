@@ -2,9 +2,10 @@ use std::future::Future;
 use std::ops::ControlFlow;
 use std::time::Duration;
 
+use serde::{Deserialize, Serialize};
 use warp::{http, hyper};
 
-use crate::bucket::{Liters, MilkBucket};
+use crate::bucket::{Gallons, Liters, MilkBucket};
 
 #[derive(Debug, Clone)]
 pub struct State {
@@ -99,4 +100,33 @@ pub async fn check_bucket(state: &State) -> ControlFlow<super::Response> {
         .body(body)
         .unwrap();
     ControlFlow::Break(res)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "snake_case")]
+pub enum Unit {
+    Liters(f32),
+    Gallons(f32),
+}
+
+impl From<Liters> for Unit {
+    fn from(value: Liters) -> Self {
+        Self::Liters(value.0)
+    }
+}
+
+impl From<Gallons> for Unit {
+    fn from(value: Gallons) -> Self {
+        Self::Gallons(value.0)
+    }
+}
+
+impl Unit {
+    pub(super) fn convert(self) -> Self {
+        match self {
+            Self::Liters(l) => Liters(l).gallons().into(),
+            Self::Gallons(g) => Gallons(g).liters().into(),
+        }
+    }
 }
