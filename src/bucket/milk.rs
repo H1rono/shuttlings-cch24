@@ -2,7 +2,7 @@ use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
-use tokio::sync::Mutex;
+use tokio::sync::{watch, Mutex};
 
 use super::{Liters, MilkBucket};
 
@@ -12,6 +12,8 @@ use super::{Liters, MilkBucket};
 pub(super) struct Inner {
     full: Liters,
     filled: Mutex<Liters>,
+    withdraw_tx: watch::Sender<()>,
+    withdraw_rx: watch::Receiver<()>,
 }
 
 // MARK: Builder
@@ -64,7 +66,13 @@ impl Builder<Liters, Liters> {
     pub fn build(self) -> MilkBucket {
         let Self { full, initial } = self;
         let filled = Mutex::new(initial);
-        let inner = Inner { filled, full };
+        let (tx, rx) = watch::channel(());
+        let inner = Inner {
+            filled,
+            full,
+            withdraw_rx: rx,
+            withdraw_tx: tx,
+        };
         MilkBucket {
             inner: Arc::new(inner),
         }
@@ -111,6 +119,10 @@ impl MilkBucket {
         if after >= 0.0 {
             tracing::info!(after, "milk withdrawn");
             *filled = Liters(after);
+            if let Err(e) = self.inner.withdraw_tx.send(()) {
+                let err = &e as &dyn std::error::Error;
+                tracing::error!(err, "channel closed unexpectedly");
+            }
             Pack(request_liters)
         } else {
             Pack(Liters(0.0))
@@ -137,12 +149,24 @@ impl MilkBucket {
     #[tracing::instrument(skip(self))]
     pub fn refill_task(self, rate: RefillRate) -> impl Future<Output = ()> + Send + 'static {
         let RefillRate { amount, duration } = rate;
-        let mut interval = tokio::time::interval(duration);
+        let mut rx = self.inner.withdraw_rx.clone();
         async move {
             loop {
-                interval.tick().await;
-                self.fill_by(amount).await;
-                tracing::debug!("tick");
+                rx.mark_changed();
+                let mut interval = tokio::time::interval(duration);
+                interval.tick().await; // ignore immediate tick
+                while !self.is_full().await {
+                    interval.tick().await;
+                    self.fill_by(amount).await;
+                    tracing::debug!("tick");
+                }
+                let Err(err) = rx.changed().await else {
+                    tracing::info!("restart filling");
+                    continue;
+                };
+                let err = &err as &dyn std::error::Error;
+                tracing::error!(err, "channel closed unexpectedly");
+                return;
             }
         }
     }
