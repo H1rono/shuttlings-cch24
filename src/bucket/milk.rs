@@ -84,6 +84,10 @@ impl MilkBucket {
         self.available().await.0 <= 0.0
     }
 
+    pub async fn is_full(&self) -> bool {
+        self.available().await.0 >= self.inner.full.0
+    }
+
     pub async fn fill_by<L>(&self, liters: L)
     where
         L: Into<Liters>,
