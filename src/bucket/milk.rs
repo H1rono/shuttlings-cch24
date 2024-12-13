@@ -96,3 +96,9 @@ impl MilkBucket {
         }
     }
 }
+
+impl Pack {
+    pub fn inner(self) -> Liters {
+        self.0
+    }
+}
