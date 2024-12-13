@@ -79,7 +79,7 @@ impl MilkBucket {
     }
 
     pub async fn is_empty(&self) -> bool {
-        self.available().await == Liters(0.0)
+        self.available().await.0 <= 0.0
     }
 
     pub async fn fill_by<L>(&self, liters: L)
@@ -89,15 +89,17 @@ impl MilkBucket {
         let liters: Liters = liters.into();
         let mut filled = self.inner.filled.lock().await;
         let current = *filled;
-        let after = f32::max(current.0 + liters.0, self.inner.full.0);
+        let after = f32::min(current.0 + liters.0, self.inner.full.0);
         *filled = Liters(after);
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn withdraw_by(&self, request_liters: Liters) -> Pack {
         let mut filled = self.inner.filled.lock().await;
-        let current = *filled;
-        if current >= request_liters {
-            *filled = Liters(current.0 - request_liters.0);
+        let after = filled.0 - request_liters.0;
+        if after >= 0.0 {
+            tracing::info!(after, "milk withdrawn");
+            *filled = Liters(after);
             Pack(request_liters)
         } else {
             Pack(Liters(0.0))

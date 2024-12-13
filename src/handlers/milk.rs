@@ -72,6 +72,7 @@ impl State {
             loop {
                 interval.tick().await;
                 bucket.fill_by(amount).await;
+                tracing::debug!("tick");
             }
         }
     }
