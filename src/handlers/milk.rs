@@ -1,5 +1,6 @@
 use std::future::Future;
 use std::ops::ControlFlow;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use warp::{http, hyper};
@@ -74,8 +75,12 @@ pub async fn check_bucket(state: Arc<State>) -> ControlFlow<super::Response> {
     ControlFlow::Break(res)
 }
 
-pub async fn withdraw(state: Arc<State>) {
-    state.bucket.withdraw_by(Liters(1.0)).await;
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    Utf8Error(#[from] std::str::Utf8Error),
+    #[error(transparent)]
+    JsonError(#[from] serde_json::Error),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Deserialize, Serialize)]

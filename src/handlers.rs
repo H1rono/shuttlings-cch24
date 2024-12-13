@@ -5,6 +5,8 @@ use std::sync::Arc;
 
 use warp::{http, hyper};
 
+use crate::bucket::Liters;
+
 pub(crate) mod ipv4_dest;
 pub(crate) mod ipv4_key;
 pub(crate) mod ipv6_dest;
@@ -120,7 +122,10 @@ pub async fn manifest_order(
 }
 
 pub async fn request_milk(state: Arc<milk::State>) -> Result<Response, Infallible> {
-    if let ControlFlow::Break(res) = milk::check_bucket(state).await {
+    let flow = milk::check_bucket(Arc::clone(&state)).await;
+    let _ = state.bucket.withdraw_by(Liters(1.0)).await;
+    if let ControlFlow::Break(res) = flow {
+        tracing::error!("rate limit reached");
         return Ok(res);
     }
     let body = hyper::Body::from("Milk withdrawn\n".to_string());
@@ -134,12 +139,18 @@ pub async fn request_milk(state: Arc<milk::State>) -> Result<Response, Infallibl
 
 pub async fn convert_milk_unit(
     state: Arc<milk::State>,
-    request: milk::Unit,
-) -> Result<Response, Infallible> {
-    if let ControlFlow::Break(res) = milk::check_bucket(state).await {
+    request: bytes::Bytes,
+) -> Result<Response, milk::Error> {
+    let flow = milk::check_bucket(Arc::clone(&state)).await;
+    let _ = state.bucket.withdraw_by(Liters(1.0)).await;
+    if let ControlFlow::Break(res) = flow {
+        tracing::error!("rate limit reached");
         return Ok(res);
     }
-    let body = serde_json::to_string(&request.convert());
+    let request = std::str::from_utf8(&request)?;
+    let request: milk::Unit = serde_json::from_str(request)?;
+    let response = request.convert();
+    let body = serde_json::to_string(&response);
     let (status, content_type, body) = match body {
         Ok(b) => (
             http::StatusCode::OK,

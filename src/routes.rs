@@ -111,23 +111,24 @@ fn milk_factory(
     let s = state.clone();
     let convert_unit = warp::any()
         .map(move || Arc::clone(&s.milk))
-        .and(json::json_body::<handlers::milk::Unit>())
-        .and_then(handlers::convert_milk_unit)
+        .and(json::header())
+        .and(warp::body::bytes())
+        .and_then(|m, b| async move {
+            use handlers::milk::Error;
+            match handlers::convert_milk_unit(m, b).await {
+                Ok(res) => Ok(res),
+                Err(Error::Utf8Error(e)) => Err(InvalidBodyEncoding::wrap_into_reject(e)),
+                Err(Error::JsonError(e)) => Err(json::RejectJson::wrap_into_reject(e)),
+            }
+        })
         .recover(json::recover);
     let s = state.clone();
     let request_milk = warp::any()
         .map(move || Arc::clone(&s.milk))
         .and_then(handlers::request_milk);
-    let s = state.clone();
     warp::path!("9" / "milk")
         .and(warp::post())
-        .map(move || Arc::clone(&s.milk))
-        .and_then(|m| async move {
-            handlers::milk::withdraw(m).await;
-            Result::<(), std::convert::Infallible>::Ok(())
-        })
         .and(Filter::or(convert_unit, request_milk))
-        .map(|(), r| r)
 }
 
 fn refill_milk(
