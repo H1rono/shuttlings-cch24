@@ -1530,7 +1530,6 @@ dependencies = [
  "tokio-util",
  "tonic",
  "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -1572,6 +1571,7 @@ dependencies = [
  "tokio",
  "toml",
  "tracing",
+ "tracing-subscriber",
  "warp",
 ]
 

@@ -1,4 +1,5 @@
 use anyhow::Context;
+use tracing_subscriber::EnvFilter;
 use warp::Filter;
 use warp::Reply;
 
@@ -8,6 +9,9 @@ use shuttlings_cch24 as lib;
 async fn main(
     #[shuttle_runtime::Secrets] secrets: shuttle_runtime::SecretStore,
 ) -> shuttle_warp::ShuttleWarp<(impl Reply,)> {
+    let env_filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into());
+    tracing_subscriber::fmt().with_env_filter(env_filter).init();
+
     let seek_url = secrets.get("SEEK_URL").context("secret SEEK_URL not set")?;
     let manifest_keyword = secrets
         .get("MANIFEST_KEYWORD")
