@@ -74,6 +74,8 @@ pub enum Error {
     InvalidColumn(usize),
     #[error("Column {0} already fulfilled")]
     ColumnFulfilled(usize),
+    #[error("Game already finished: {0:?}")]
+    GameFinished(Status),
 }
 
 impl Default for Game {
@@ -127,6 +129,9 @@ impl Game {
     }
 
     pub fn pile(&mut self, team: Team, col: usize) -> Result<(), Error> {
+        if let s @ (Status::Wins(_) | Status::NoWinner) = self.status() {
+            return Err(Error::GameFinished(s));
+        }
         let column = self
             .grid
             .as_inner_mut()
