@@ -168,8 +168,7 @@ fn connect4_reset(
 fn connect4_place(
     state: State,
 ) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
-    use handlers::connect4::PlacePathParam;
-
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     enum Team {
         Cookie,
         Milk,
@@ -201,24 +200,29 @@ fn connect4_place(
     }
 
     let State { connect4, .. } = state;
-    warp::path!("12" / "place" / Team / usize)
-        .map(move |t: Team, c: usize| {
+    warp::path!("12" / "place" / String / String)
+        .map(move |t: String, c: String| {
             (
                 Arc::clone(&connect4),
-                PlacePathParam::new(t.into(), usize::wrapping_sub(c, 1)),
+                Team::from_str(&t),
+                usize::from_str(&c),
             )
         })
         .untuple_one()
-        .and_then(handlers::connect4_place)
-        .recover(|r: warp::Rejection| async move {
-            if !r.is_not_found() {
-                return Err(r);
-            }
-            let res = http::Response::builder()
-                .status(http::StatusCode::BAD_REQUEST)
-                .body(hyper::Body::empty())
-                .unwrap();
-            Ok(res)
+        .and_then(|connect4, t, c| async move {
+            let (team, col) = match (t, c) {
+                (Ok(t), Ok(c)) => (crate::connect4::Team::from(t), usize::wrapping_sub(c, 1)),
+                e => {
+                    tracing::info!("bad request: {e:?}");
+                    let res = http::Response::builder()
+                        .status(http::StatusCode::BAD_REQUEST)
+                        .body(hyper::Body::empty())
+                        .unwrap();
+                    return Ok(res);
+                }
+            };
+            let param = handlers::connect4::PlacePathParam::new(team, col);
+            handlers::connect4_place(connect4, param).await
         })
 }
 
