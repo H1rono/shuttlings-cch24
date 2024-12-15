@@ -1,5 +1,6 @@
 use std::fmt;
 
+use rand::{rngs::StdRng, Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 use super::{Column, Game, Grid, Tile};
@@ -94,12 +95,16 @@ impl fmt::Display for Game {
 }
 
 impl Game {
+    const RNG_SEED: u64 = 2024;
+
     pub fn new() -> Self {
         let grid = Grid(vec![Column::default(); 4]);
-        Self { grid }
+        let rng = StdRng::seed_from_u64(Self::RNG_SEED);
+        Self { grid, rng }
     }
 
     pub fn reset(&mut self) {
+        self.rng = StdRng::seed_from_u64(Self::RNG_SEED);
         self.grid.0.fill(Column::default());
     }
 
@@ -145,6 +150,18 @@ impl Game {
             .ok_or(Error::ColumnFulfilled(col))?;
         *tile = team.into();
         Ok(())
+    }
+
+    pub fn random_board(&mut self) {
+        let it = (0usize..4).flat_map(|r| (0usize..4).map(move |c| (r, c)));
+        for (r, c) in it {
+            let tile = &mut self.grid.as_inner_mut()[c].as_inner_mut()[r];
+            *tile = if self.rng.gen::<bool>() {
+                Tile::Cookie
+            } else {
+                Tile::Milk
+            };
+        }
     }
 }
 
