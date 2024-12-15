@@ -221,3 +221,33 @@ pub async fn connect4_reset(state: Arc<connect4::State>) -> Result<Response, Inf
         .unwrap();
     Ok(res)
 }
+
+#[tracing::instrument(skip(state))]
+pub async fn connect4_place(
+    state: Arc<connect4::State>,
+    param: connect4::PlacePathParam,
+) -> Result<Response, Infallible> {
+    use crate::connect4::GameError;
+
+    let connect4::PlacePathParam { team, col } = param;
+    let mut game = state.game.lock().await;
+    let (status, body) = if let Err(err) = game.pile(team, col) {
+        tracing::info!(err = &err as &dyn std::error::Error, "placement failed");
+        match err {
+            e @ GameError::InvalidColumn(_) => (http::StatusCode::BAD_REQUEST, e.to_string()),
+            _ => (
+                http::StatusCode::SERVICE_UNAVAILABLE,
+                game.display_with_status().to_string(),
+            ),
+        }
+    } else {
+        tracing::info!("placed successfully");
+        (http::StatusCode::OK, game.display_with_status().to_string())
+    };
+    let res = http::Response::builder()
+        .status(status)
+        .header(http::header::CONTENT_TYPE, "plain/text")
+        .body(hyper::Body::from(body))
+        .unwrap();
+    Ok(res)
+}

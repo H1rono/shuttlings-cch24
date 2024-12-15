@@ -1,6 +1,6 @@
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
-use warp::{Filter, Reply};
+use warp::{http, hyper, Filter, Reply};
 
 use crate::handlers;
 
@@ -31,6 +31,7 @@ pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::
         .or(refill_milk(state.clone()))
         .or(connect4_board(state.clone()))
         .or(connect4_reset(state.clone()))
+        .or(connect4_place(state.clone()))
 }
 
 fn hello_bird(
@@ -161,4 +162,61 @@ fn connect4_reset(
         .and(warp::post())
         .map(move || Arc::clone(&connect4))
         .and_then(handlers::connect4_reset)
+}
+
+fn connect4_place(
+    state: State,
+) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+    use handlers::connect4::PlacePathParam;
+
+    enum Team {
+        Cookie,
+        Milk,
+    }
+
+    #[derive(Debug, thiserror::Error)]
+    #[error("<Team as FromStr>::Err")]
+    struct TeamFromStrError;
+
+    impl FromStr for Team {
+        type Err = TeamFromStrError;
+
+        fn from_str(s: &str) -> Result<Self, Self::Err> {
+            match s {
+                "cookie" => Ok(Self::Cookie),
+                "milk" => Ok(Self::Milk),
+                _ => Err(TeamFromStrError),
+            }
+        }
+    }
+
+    impl From<Team> for crate::connect4::Team {
+        fn from(value: Team) -> Self {
+            match value {
+                Team::Cookie => Self::Cookie,
+                Team::Milk => Self::Milk,
+            }
+        }
+    }
+
+    let State { connect4, .. } = state;
+    warp::path!("12" / "place" / Team / usize)
+        .map(move |t: Team, c: usize| {
+            (
+                Arc::clone(&connect4),
+                PlacePathParam::new(t.into(), usize::wrapping_sub(c, 1)),
+            )
+        })
+        .untuple_one()
+        .and_then(handlers::connect4_place)
+        .recover(|r: warp::Rejection| async move {
+            if !r.is_not_found() {
+                return Err(r);
+            }
+            let res = http::Response::builder()
+                .status(http::StatusCode::BAD_REQUEST)
+                .body(hyper::Body::empty())
+                .unwrap();
+            Ok(res)
+        })
 }
