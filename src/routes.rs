@@ -32,6 +32,7 @@ pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::
         .or(connect4_board(state.clone()))
         .or(connect4_reset(state.clone()))
         .or(connect4_place(state.clone()))
+        .or(connect4_random_board(state.clone()))
 }
 
 fn hello_bird(
@@ -219,4 +220,14 @@ fn connect4_place(
                 .unwrap();
             Ok(res)
         })
+}
+
+fn connect4_random_board(
+    state: State,
+) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+    let State { connect4, .. } = state;
+    warp::path!("12" / "random-board")
+        .and(warp::get())
+        .map(move || Arc::clone(&connect4))
+        .and_then(handlers::connect4_random_board)
 }

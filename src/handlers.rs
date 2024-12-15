@@ -251,3 +251,15 @@ pub async fn connect4_place(
         .unwrap();
     Ok(res)
 }
+
+pub async fn connect4_random_board(state: Arc<connect4::State>) -> Result<Response, Infallible> {
+    let mut game = state.game.lock().await;
+    game.random_board();
+    let body = game.display_with_status().to_string();
+    let res = Response::builder()
+        .status(http::StatusCode::OK)
+        .header(http::header::CONTENT_TYPE, "plain/text")
+        .body(hyper::Body::from(body))
+        .unwrap();
+    Ok(res)
+}
