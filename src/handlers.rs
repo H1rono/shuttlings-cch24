@@ -7,6 +7,9 @@ use warp::{http, hyper};
 
 use crate::bucket::Liters;
 
+// MARK: mod
+
+pub(crate) mod connect4;
 pub(crate) mod ipv4_dest;
 pub(crate) mod ipv4_key;
 pub(crate) mod ipv6_dest;
@@ -17,6 +20,8 @@ pub(crate) mod seek;
 
 type Response<B = hyper::Body> = http::Response<B>;
 
+// MARK: seek
+
 pub async fn seek(state: Arc<seek::State>) -> Result<Response, Infallible> {
     let res = http::Response::builder()
         .status(http::StatusCode::FOUND)
@@ -25,6 +30,8 @@ pub async fn seek(state: Arc<seek::State>) -> Result<Response, Infallible> {
         .unwrap();
     Ok(res)
 }
+
+// MARK: ipv4
 
 macro_rules! ipv4_octets_zip_with {
     ($f:path => ($l:expr, $r:expr)) => {
@@ -61,6 +68,8 @@ pub async fn ipv4_key(query: ipv4_key::Query) -> Result<Response, Infallible> {
     Ok(res)
 }
 
+// MARK: ipv6
+
 pub async fn ipv6_dest(query: ipv6_dest::Query) -> Result<Response, Infallible> {
     let (from, key) = query.to_bits();
     let dest = from ^ key;
@@ -84,6 +93,8 @@ pub async fn ipv6_key(query: ipv6_key::Query) -> Result<Response, Infallible> {
         .unwrap();
     Ok(res)
 }
+
+// MARK: manifest
 
 pub async fn manifest_order(
     state: Arc<manifest::State>,
@@ -120,6 +131,8 @@ pub async fn manifest_order(
     let res = Response::builder().status(status).body(body).unwrap();
     Ok(res)
 }
+
+// MARK: milk factory
 
 pub async fn request_milk(state: Arc<milk::State>) -> Result<Response, Infallible> {
     let flow = milk::check_bucket(Arc::clone(&state)).await;
@@ -180,6 +193,31 @@ pub async fn refill_milk(state: Arc<milk::State>) -> Result<Response, Infallible
     let res = Response::builder()
         .status(http::StatusCode::OK)
         .body(hyper::Body::empty())
+        .unwrap();
+    Ok(res)
+}
+
+// MARK: connect4
+
+pub async fn connect4_board(state: Arc<connect4::State>) -> Result<Response, Infallible> {
+    let game = state.game.lock().await;
+    let body = game.display_with_status().to_string();
+    let res = Response::builder()
+        .status(http::StatusCode::OK)
+        .header(http::header::CONTENT_TYPE, "plain/text")
+        .body(hyper::Body::from(body))
+        .unwrap();
+    Ok(res)
+}
+
+pub async fn connect4_reset(state: Arc<connect4::State>) -> Result<Response, Infallible> {
+    let mut game = state.game.lock().await;
+    game.reset();
+    let body = game.display_with_status().to_string();
+    let res = Response::builder()
+        .status(http::StatusCode::OK)
+        .header(http::header::CONTENT_TYPE, "plain/text")
+        .body(hyper::Body::from(body))
         .unwrap();
     Ok(res)
 }

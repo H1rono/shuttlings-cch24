@@ -114,6 +114,7 @@ impl Builder<String, String, f32, f32> {
             seek: Arc::new(seek_state),
             manifest: Arc::new(manifest_state),
             milk: Arc::new(milk),
+            connect4: Arc::new(Default::default()),
         }
     }
 }

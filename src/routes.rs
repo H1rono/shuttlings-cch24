@@ -11,11 +11,12 @@ mod toml;
 
 use self::reject::InvalidBodyEncoding;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct State {
     seek: Arc<handlers::seek::State>,
     manifest: Arc<handlers::manifest::State>,
     milk: Arc<handlers::milk::State>,
+    connect4: Arc<handlers::connect4::State>,
 }
 
 pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
@@ -28,6 +29,8 @@ pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::
         .or(manifest_order(state.clone()))
         .or(milk_factory(state.clone()))
         .or(refill_milk(state.clone()))
+        .or(connect4_board(state.clone()))
+        .or(connect4_reset(state.clone()))
 }
 
 fn hello_bird(
@@ -138,4 +141,24 @@ fn refill_milk(
         .and(warp::post())
         .map(move || Arc::clone(&state.milk))
         .and_then(handlers::refill_milk)
+}
+
+fn connect4_board(
+    state: State,
+) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+    let State { connect4, .. } = state;
+    warp::path!("12" / "board")
+        .and(warp::get())
+        .map(move || Arc::clone(&connect4))
+        .and_then(handlers::connect4_board)
+}
+
+fn connect4_reset(
+    state: State,
+) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+    let State { connect4, .. } = state;
+    warp::path!("12" / "reset")
+        .and(warp::post())
+        .map(move || Arc::clone(&connect4))
+        .and_then(handlers::connect4_reset)
 }
