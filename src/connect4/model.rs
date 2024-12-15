@@ -113,7 +113,7 @@ pub enum Tile {
 impl fmt::Display for Tile {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Empty => f.write_str("⬛️"),
+            Self::Empty => f.write_str("⬛"),
             Self::Cookie => f.write_str("🍪"),
             Self::Milk => f.write_str("🥛"),
         }
