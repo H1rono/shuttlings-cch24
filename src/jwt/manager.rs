@@ -98,6 +98,10 @@ impl Builder<String, String, Duration> {
 }
 
 impl Manager {
+    pub fn builder() -> Builder {
+        Builder::default()
+    }
+
     pub const ALGORITHM: jsonwebtoken::Algorithm = jsonwebtoken::Algorithm::HS256;
 
     pub fn encode(&self, value: Value) -> Result<Encoded, EncodingError> {

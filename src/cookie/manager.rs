@@ -295,6 +295,10 @@ impl fmt::Display for ToHeaderValue<'_> {
 }
 
 impl Manager {
+    pub fn builder() -> Builder {
+        Builder::default()
+    }
+
     pub fn to_header_value<'a>(&'a self, value: &'a str) -> ToHeaderValue<'a> {
         ToHeaderValue {
             manager: self,
