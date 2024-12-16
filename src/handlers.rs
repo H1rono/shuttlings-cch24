@@ -9,6 +9,7 @@ use crate::bucket::Liters;
 
 // MARK: mod
 
+pub(crate) mod auth_token;
 pub(crate) mod connect4;
 pub(crate) mod ipv4_dest;
 pub(crate) mod ipv4_key;
@@ -259,6 +260,66 @@ pub async fn connect4_random_board(state: Arc<connect4::State>) -> Result<Respon
     let res = Response::builder()
         .status(http::StatusCode::OK)
         .header(http::header::CONTENT_TYPE, "plain/text")
+        .body(hyper::Body::from(body))
+        .unwrap();
+    Ok(res)
+}
+
+// MARK: jwt
+
+#[tracing::instrument(skip_all)]
+pub async fn jwt_wrap(
+    state: Arc<auth_token::State>,
+    payload: serde_json::Value,
+) -> Result<Response, Infallible> {
+    let auth_token::State {
+        jwt_manager,
+        cookie_manager,
+    } = &*state;
+    let jwt = match jwt_manager.encode(payload) {
+        Ok(jwt) => jwt,
+        Err(e) => {
+            tracing::error!(err = &e as &dyn std::error::Error, "failed to encode JWT");
+            let res = Response::builder()
+                .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+                .body(hyper::Body::empty())
+                .unwrap();
+            return Ok(res);
+        }
+    };
+    tracing::info!("successfully encoded JWT");
+    let jwt = jwt.into_inner();
+    let set_cookie = cookie_manager.to_header_value(&jwt);
+    let res = Response::builder()
+        .status(http::StatusCode::OK)
+        .header(http::header::SET_COOKIE, set_cookie.to_string())
+        .body(hyper::Body::empty())
+        .unwrap();
+    Ok(res)
+}
+
+#[tracing::instrument(skip_all)]
+pub async fn jwt_unwrap(
+    state: Arc<auth_token::State>,
+    headers: http::HeaderMap,
+) -> Result<Response, Infallible> {
+    let value = auth_token::unwrap_cookie_from_headers(&state, &headers).await;
+    let value = match value {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::info!(err = %e);
+            let res = Response::builder()
+                .status(http::StatusCode::BAD_REQUEST)
+                .body(hyper::Body::empty())
+                .unwrap();
+            return Ok(res);
+        }
+    };
+    tracing::info!("successfully decoded JWT from cookie");
+    let body = serde_json::to_string(&value).unwrap();
+    let res = Response::builder()
+        .status(http::StatusCode::OK)
+        .header(http::header::CONTENT_TYPE, "application/json")
         .body(hyper::Body::from(body))
         .unwrap();
     Ok(res)
