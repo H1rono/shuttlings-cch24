@@ -1,7 +1,8 @@
+use std::borrow::Cow;
 use std::fmt;
 use std::sync::Arc;
-use std::{borrow::Cow, time::Duration};
 
+use chrono::TimeDelta;
 use jsonwebtoken::{DecodingKey, EncodingKey};
 use serde_json::Value;
 
@@ -14,7 +15,7 @@ pub(super) struct Inner {
     raw_key: String,
     enc_key: EncodingKey,
     dec_key: DecodingKey,
-    expires_in: Duration,
+    expires_in: TimeDelta,
 }
 
 pub struct Builder<Issuer = (), Key = (), ExpiresIn = ()> {
@@ -64,7 +65,7 @@ impl<Issuer, Key, ExpiresIn> Builder<Issuer, Key, ExpiresIn> {
         }
     }
 
-    pub fn expires_in(self, value: Duration) -> Builder<Issuer, Key, Duration> {
+    pub fn expires_in(self, value: TimeDelta) -> Builder<Issuer, Key, TimeDelta> {
         let Self { issuer, key, .. } = self;
         let expires_in = value;
         Builder {
@@ -75,7 +76,7 @@ impl<Issuer, Key, ExpiresIn> Builder<Issuer, Key, ExpiresIn> {
     }
 }
 
-impl Builder<String, String, Duration> {
+impl Builder<String, String, TimeDelta> {
     pub fn build(self) -> Manager {
         let Self {
             issuer,
@@ -106,10 +107,11 @@ impl Manager {
 
     pub fn encode(&self, value: Value) -> Result<Encoded, EncodingError> {
         let iat = jsonwebtoken::get_current_timestamp();
-        let exp = iat + self.inner.expires_in.as_secs();
+        // FIXME
+        let exp = iat as i64 + self.inner.expires_in.num_seconds();
         let iss = self.inner.issuer.clone();
         let claims = Claims {
-            exp,
+            exp: exp as u64,
             iat,
             iss,
             custom: value,
