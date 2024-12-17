@@ -2,3 +2,8 @@
 include = [
     "keys/*"
 ]
+
+[build]
+assets = [
+    "keys/*"
+]
