@@ -270,7 +270,8 @@ impl fmt::Display for ToHeaderValue<'_> {
             };
         }
 
-        use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
+        // FIXME: apply percent_encoding
+        // use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 
         let Self { manager, value } = self;
         let Inner {
@@ -281,7 +282,7 @@ impl fmt::Display for ToHeaderValue<'_> {
             domain,
             lifetime,
         } = &*manager.inner;
-        let value = utf8_percent_encode(value, NON_ALPHANUMERIC);
+        // let value = utf8_percent_encode(value, NON_ALPHANUMERIC);
         write!(f, "{name}={value}")?;
         attr! {
             Some(path) => write!(f, "; Path={path}")?;
@@ -313,7 +314,9 @@ impl Manager {
             .flat_map(|i| i.trim().split_once('='))
             .find_map(|(k, v)| (k == self.inner.name).then_some(v))
             .ok_or(PercentDecodeError::NoMatchingItemFound)?;
-        let v = percent_encoding::percent_decode_str(v).decode_utf8()?;
-        Ok(v.into_owned())
+        Ok(v.to_string())
+        // FIXME: apply percent_encoding
+        // let v = percent_encoding::percent_decode_str(v).decode_utf8()?;
+        // Ok(v.into_owned())
     }
 }

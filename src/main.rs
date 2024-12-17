@@ -54,7 +54,7 @@ fn load_jwt_manager(secrets: &shuttle_runtime::SecretStore) -> anyhow::Result<li
         .inspect_err(|e| tracing::error!(%e))
         .unwrap_or_else(|_| "86400".to_string()) // 1 day in seconds
         .parse()?;
-    let expires_in = chrono::TimeDelta::seconds(expires_in);
+    let expires_in = TimeDelta::seconds(expires_in);
     let manager = lib::jwt::Manager::builder()
         .issuer(issuer)
         .key(key)
@@ -70,30 +70,31 @@ fn load_cookie_manager(
     let name = secrets
         .get("COOKIE_NAME")
         .context("secret COOKIE_NAME not set")?;
-    let max_age: i64 = secrets
-        .get("COOKIE_MAX_AGE")
-        .context("secret COOKIE_MAX_AGE not set")
-        .inspect_err(|e| tracing::error!(%e))
-        .unwrap_or_else(|_| "86400".to_string())
-        .parse()?;
-    let max_age = TimeDelta::seconds(max_age);
-    let domain = secrets.get("COOKIE_DOMAIN");
-    let path = secrets.get("COOKIE_PATH");
-    let secure: bool = secrets
-        .get("COOKIE_SECURE")
-        .unwrap_or_else(|| "false".to_string())
-        .parse()?;
-    let builder = lib::cookie::Manager::builder().name(name).max_age(max_age);
-    let builder = if let Some(d) = domain {
-        builder.domain(d)
-    } else {
-        builder
-    };
-    let builder = if let Some(p) = path {
-        builder.path(p)
-    } else {
-        builder
-    };
-    let builder = if secure { builder.secure() } else { builder };
+    // let max_age: i64 = secrets
+    //     .get("COOKIE_MAX_AGE")
+    //     .context("secret COOKIE_MAX_AGE not set")
+    //     .inspect_err(|e| tracing::error!(%e))
+    //     .unwrap_or_else(|_| "86400".to_string())
+    //     .parse()?;
+    // let max_age = TimeDelta::seconds(max_age);
+    // let domain = secrets.get("COOKIE_DOMAIN");
+    // let path = secrets.get("COOKIE_PATH");
+    // let secure: bool = secrets
+    //     .get("COOKIE_SECURE")
+    //     .unwrap_or_else(|| "false".to_string())
+    //     .parse()?;
+    let builder = lib::cookie::Manager::builder().name(name);
+    // let builder = builder.max_age(max_age);
+    // let builder = if let Some(d) = domain {
+    //     builder.domain(d)
+    // } else {
+    //     builder
+    // };
+    // let builder = if let Some(p) = path {
+    //     builder.path(p)
+    // } else {
+    //     builder
+    // };
+    // let builder = if secure { builder.secure() } else { builder };
     Ok(builder.build())
 }
