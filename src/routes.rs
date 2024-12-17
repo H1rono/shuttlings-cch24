@@ -36,6 +36,7 @@ pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::
         .or(connect4_random_board(state.clone()))
         .or(jwt_wrap(state.clone()))
         .or(jwt_unwrap(state.clone()))
+        .or(jwt_decode(state.clone()))
         .with(warp::filters::trace::request())
 }
 
@@ -258,4 +259,15 @@ fn jwt_unwrap(
         .map(move || Arc::clone(&auth_token))
         .and(warp::header::headers_cloned())
         .and_then(handlers::jwt_unwrap)
+}
+
+fn jwt_decode(
+    state: State,
+) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+    let State { auth_token, .. } = state;
+    warp::path!("16" / "decode")
+        .and(warp::post())
+        .map(move || Arc::clone(&auth_token))
+        .and(warp::body::bytes())
+        .and_then(handlers::jwt_decode)
 }

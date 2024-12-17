@@ -325,3 +325,46 @@ pub async fn jwt_unwrap(
         .unwrap();
     Ok(res)
 }
+
+#[tracing::instrument(skip_all)]
+pub async fn jwt_decode(
+    state: Arc<auth_token::State>,
+    body: bytes::Bytes,
+) -> Result<Response, Infallible> {
+    use crate::jwt::DecoderError;
+    use jsonwebtoken::errors::ErrorKind as JwtErrorKind;
+
+    let value = match auth_token::decode_with_pem(&state, body).await {
+        Ok(v) => v,
+        Err(e) => {
+            tracing::error!(?e);
+            let status = match e.downcast_ref::<DecoderError>() {
+                Some(e @ DecoderError::LoadKeyFailed(_)) => {
+                    tracing::error!(err = e as &dyn std::error::Error);
+                    http::StatusCode::INTERNAL_SERVER_ERROR
+                }
+                Some(DecoderError::DecodePayloadFailed(e)) => {
+                    if let JwtErrorKind::InvalidSignature = e.kind() {
+                        http::StatusCode::UNAUTHORIZED
+                    } else {
+                        http::StatusCode::BAD_REQUEST
+                    }
+                }
+                _ => http::StatusCode::BAD_REQUEST,
+            };
+            let res = Response::builder()
+                .status(status)
+                .body(hyper::Body::empty())
+                .unwrap();
+            return Ok(res);
+        }
+    };
+    tracing::info!("successfully decoded with pem");
+    let body = serde_json::to_string(&value).unwrap();
+    let res = Response::builder()
+        .status(http::StatusCode::OK)
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(hyper::Body::from(body))
+        .unwrap();
+    Ok(res)
+}

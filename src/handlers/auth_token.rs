@@ -103,3 +103,9 @@ pub(super) async fn unwrap_cookie_from_headers(
     let claims = state.jwt_manager.decode(&jwt)?.into_inner();
     Ok(claims.custom)
 }
+
+pub(super) async fn decode_with_pem(state: &State, body: bytes::Bytes) -> anyhow::Result<Value> {
+    let body = std::str::from_utf8(&body)?;
+    let value = state.decoder.decode(body)?;
+    Ok(value)
+}
