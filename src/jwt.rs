@@ -7,7 +7,7 @@ mod decoder;
 mod error;
 mod manager;
 
-pub use error::{DecodingError, EncodingError};
+pub use error::{DecoderError, DecodingError, EncodingError, UnsupportedAlgorithm};
 pub use manager::{Decoded, Encoded};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
