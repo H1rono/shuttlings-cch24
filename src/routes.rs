@@ -17,6 +17,7 @@ pub struct State {
     manifest: Arc<handlers::manifest::State>,
     milk: Arc<handlers::milk::State>,
     connect4: Arc<handlers::connect4::State>,
+    auth_token: Arc<handlers::auth_token::State>,
 }
 
 pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
