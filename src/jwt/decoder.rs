@@ -40,10 +40,22 @@ impl Decoder {
     pub fn decode(&self, jwt: &str) -> Result<Value, DecoderError> {
         let header = jsonwebtoken::decode_header(jwt).map_err(DecoderError::DecodeHeaderFailed)?;
         let key = self.decoding_key_of_alg(header.alg)?;
-        let validation = Validation::new(header.alg);
+        let validation = Self::validation_with(header.alg);
         let value = jsonwebtoken::decode(jwt, &key, &validation)
             .map_err(DecoderError::DecodePayloadFailed)?;
         Ok(value.claims)
+    }
+
+    fn validation_with(alg: Algorithm) -> Validation {
+        let mut validation = Validation::new(alg);
+        validation.validate_exp = false;
+        validation.validate_aud = false;
+        validation.validate_nbf = false;
+        validation.aud = None;
+        validation.iss = None;
+        validation.sub = None;
+        validation.required_spec_claims.clear();
+        validation
     }
 
     fn decoding_key_of_alg(&self, alg: Algorithm) -> Result<DecodingKey, DecoderError> {
