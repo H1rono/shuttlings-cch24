@@ -27,6 +27,7 @@ async fn main(
     let manifest_keyword = get_secret!(secrets.MANIFEST_KEYWORD)?;
     let jwt_manager = load_jwt_manager(&secrets)?;
     let cookie_manager = load_cookie_manager(&secrets)?;
+    let jwt_decoder = load_jwt_decoder(&secrets).await?;
     let state = lib::routes::State::builder()
         .seek_url(seek_url)
         .manifest_keyword(manifest_keyword)
@@ -34,6 +35,7 @@ async fn main(
         .milk_initial(0.0)
         .jwt_manager(jwt_manager)
         .cookie_manager(cookie_manager)
+        .jwt_decoder(jwt_decoder)
         .build();
     let _bg_task = tokio::spawn(state.bg_task());
     let route = lib::routes::make(state);
@@ -89,4 +91,16 @@ fn load_cookie_manager(
     // };
     // let builder = if secure { builder.secure() } else { builder };
     Ok(builder.build())
+}
+
+#[tracing::instrument(skip_all)]
+async fn load_jwt_decoder(
+    secrets: &shuttle_runtime::SecretStore,
+) -> anyhow::Result<lib::jwt::Decoder> {
+    let pem_path = get_secret!(secrets.JWT_PEM_FILE)?;
+    let pem = tokio::fs::read(pem_path)
+        .await
+        .context("failed to read pem file")?;
+    let decoder = lib::jwt::Decoder::builder().pem(pem).build();
+    Ok(decoder)
 }

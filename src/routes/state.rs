@@ -10,6 +10,7 @@ pub struct Builder<
     MilkInitial = (),
     JwtManager = (),
     CookieManager = (),
+    JwtDecoder = (),
 > {
     seek_url: SeekUrl,
     manifest_keyword: ManifestKeyword,
@@ -17,6 +18,7 @@ pub struct Builder<
     milk_initial: MilkInitial,
     jwt_manager: JwtManager,
     cookie_manager: CookieManager,
+    jwt_decoder: JwtDecoder,
 }
 
 impl Builder {
@@ -25,13 +27,21 @@ impl Builder {
     }
 }
 
-impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager>
-    Builder<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager>
+impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager, JwtDecoder>
+    Builder<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager, JwtDecoder>
 {
     pub fn seek_url<'s, S>(
         self,
         value: S,
-    ) -> Builder<String, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager>
+    ) -> Builder<
+        String,
+        ManifestKeyword,
+        MilkFull,
+        MilkInitial,
+        JwtManager,
+        CookieManager,
+        JwtDecoder,
+    >
     where
         S: Into<Cow<'s, str>>,
     {
@@ -41,6 +51,7 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager>
             milk_initial,
             jwt_manager,
             cookie_manager,
+            jwt_decoder,
             ..
         } = self;
         let seek_url = value.into().into_owned();
@@ -51,13 +62,14 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager>
             milk_initial,
             jwt_manager,
             cookie_manager,
+            jwt_decoder,
         }
     }
 
     pub fn manifest_keyword<'s, S>(
         self,
         value: S,
-    ) -> Builder<SeekUrl, String, MilkFull, MilkInitial, JwtManager, CookieManager>
+    ) -> Builder<SeekUrl, String, MilkFull, MilkInitial, JwtManager, CookieManager, JwtDecoder>
     where
         S: Into<Cow<'s, str>>,
     {
@@ -67,6 +79,7 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager>
             milk_initial,
             jwt_manager,
             cookie_manager,
+            jwt_decoder,
             ..
         } = self;
         let manifest_keyword = value.into().into_owned();
@@ -77,19 +90,22 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager>
             milk_initial,
             jwt_manager,
             cookie_manager,
+            jwt_decoder,
         }
     }
 
     pub fn milk_full(
         self,
         value: f32,
-    ) -> Builder<SeekUrl, ManifestKeyword, f32, MilkInitial, JwtManager, CookieManager> {
+    ) -> Builder<SeekUrl, ManifestKeyword, f32, MilkInitial, JwtManager, CookieManager, JwtDecoder>
+    {
         let Self {
             seek_url,
             manifest_keyword,
             milk_initial,
             jwt_manager,
             cookie_manager,
+            jwt_decoder,
             ..
         } = self;
         Builder {
@@ -99,19 +115,22 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager>
             milk_initial,
             jwt_manager,
             cookie_manager,
+            jwt_decoder,
         }
     }
 
     pub fn milk_initial(
         self,
         value: f32,
-    ) -> Builder<SeekUrl, ManifestKeyword, MilkFull, f32, JwtManager, CookieManager> {
+    ) -> Builder<SeekUrl, ManifestKeyword, MilkFull, f32, JwtManager, CookieManager, JwtDecoder>
+    {
         let Self {
             seek_url,
             manifest_keyword,
             milk_full,
             jwt_manager,
             cookie_manager,
+            jwt_decoder,
             ..
         } = self;
         Builder {
@@ -121,19 +140,29 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager>
             milk_initial: value,
             jwt_manager,
             cookie_manager,
+            jwt_decoder,
         }
     }
 
     pub fn jwt_manager(
         self,
         value: jwt::Manager,
-    ) -> Builder<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, jwt::Manager, CookieManager> {
+    ) -> Builder<
+        SeekUrl,
+        ManifestKeyword,
+        MilkFull,
+        MilkInitial,
+        jwt::Manager,
+        CookieManager,
+        JwtDecoder,
+    > {
         let Self {
             seek_url,
             manifest_keyword,
             milk_full,
             milk_initial,
             cookie_manager,
+            jwt_decoder,
             ..
         } = self;
         Builder {
@@ -143,19 +172,29 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager>
             milk_initial,
             jwt_manager: value,
             cookie_manager,
+            jwt_decoder,
         }
     }
 
     pub fn cookie_manager(
         self,
         value: cookie::Manager,
-    ) -> Builder<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, cookie::Manager> {
+    ) -> Builder<
+        SeekUrl,
+        ManifestKeyword,
+        MilkFull,
+        MilkInitial,
+        JwtManager,
+        cookie::Manager,
+        JwtDecoder,
+    > {
         let Self {
             seek_url,
             manifest_keyword,
             milk_full,
             milk_initial,
             jwt_manager,
+            jwt_decoder,
             ..
         } = self;
         Builder {
@@ -165,11 +204,54 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager>
             milk_initial,
             jwt_manager,
             cookie_manager: value,
+            jwt_decoder,
+        }
+    }
+
+    pub fn jwt_decoder(
+        self,
+        value: jwt::Decoder,
+    ) -> Builder<
+        SeekUrl,
+        ManifestKeyword,
+        MilkFull,
+        MilkInitial,
+        JwtManager,
+        CookieManager,
+        jwt::Decoder,
+    > {
+        let Self {
+            seek_url,
+            manifest_keyword,
+            milk_full,
+            milk_initial,
+            jwt_manager,
+            cookie_manager,
+            ..
+        } = self;
+        Builder {
+            seek_url,
+            manifest_keyword,
+            milk_full,
+            milk_initial,
+            jwt_manager,
+            cookie_manager,
+            jwt_decoder: value,
         }
     }
 }
 
-impl Builder<String, String, f32, f32, crate::jwt::Manager, crate::cookie::Manager> {
+impl
+    Builder<
+        String,
+        String,
+        f32,
+        f32,
+        crate::jwt::Manager,
+        crate::cookie::Manager,
+        crate::jwt::Decoder,
+    >
+{
     pub fn build(self) -> super::State {
         use crate::handlers::{manifest, milk, seek};
 
@@ -180,6 +262,7 @@ impl Builder<String, String, f32, f32, crate::jwt::Manager, crate::cookie::Manag
             milk_initial,
             jwt_manager,
             cookie_manager,
+            jwt_decoder,
         } = self;
         let seek_state = seek::State::builder().seek_url(seek_url).build();
         let manifest_state = manifest::State::builder()
@@ -192,6 +275,7 @@ impl Builder<String, String, f32, f32, crate::jwt::Manager, crate::cookie::Manag
         let auth_token = auth_token::State::builder()
             .jwt_manager(jwt_manager)
             .cookie_manager(cookie_manager)
+            .decoder(jwt_decoder)
             .build();
         super::State {
             seek: Arc::new(seek_state),

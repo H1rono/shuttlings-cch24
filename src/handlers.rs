@@ -275,6 +275,7 @@ pub async fn jwt_wrap(
     let auth_token::State {
         jwt_manager,
         cookie_manager,
+        ..
     } = &*state;
     let jwt = match jwt_manager.encode(payload) {
         Ok(jwt) => jwt,
