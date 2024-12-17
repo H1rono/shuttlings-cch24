@@ -34,6 +34,8 @@ pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::
         .or(connect4_reset(state.clone()))
         .or(connect4_place(state.clone()))
         .or(connect4_random_board(state.clone()))
+        .or(jwt_wrap(state.clone()))
+        .or(jwt_unwrap(state.clone()))
 }
 
 fn hello_bird(
@@ -235,4 +237,24 @@ fn connect4_random_board(
         .and(warp::get())
         .map(move || Arc::clone(&connect4))
         .and_then(handlers::connect4_random_board)
+}
+
+fn jwt_wrap(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+    let State { auth_token, .. } = state;
+    warp::path!("16" / "wrap")
+        .and(warp::post())
+        .map(move || Arc::clone(&auth_token))
+        .and(json::json_body::<serde_json::Value>())
+        .and_then(handlers::jwt_wrap)
+}
+
+fn jwt_unwrap(
+    state: State,
+) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+    let State { auth_token, .. } = state;
+    warp::path!("16" / "unwrap")
+        .and(warp::get())
+        .map(move || Arc::clone(&auth_token))
+        .and(warp::header::headers_cloned())
+        .and_then(handlers::jwt_unwrap)
 }
