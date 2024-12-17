@@ -68,7 +68,7 @@ pub(super) async fn unwrap_cookie_from_headers(
         anyhow::bail!("Received no cookie header");
     };
     let cookie = cookie.to_str()?;
-    let value = state.cookie_manager.from_header_value(cookie)?;
-    let value = serde_json::from_str(&value)?;
-    Ok(value)
+    let jwt = state.cookie_manager.from_header_value(cookie)?;
+    let claims = state.jwt_manager.decode(&jwt)?.into_inner();
+    Ok(claims.custom)
 }
