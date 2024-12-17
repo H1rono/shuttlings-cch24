@@ -36,6 +36,7 @@ pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::
         .or(connect4_random_board(state.clone()))
         .or(jwt_wrap(state.clone()))
         .or(jwt_unwrap(state.clone()))
+        .with(warp::filters::trace::request())
 }
 
 fn hello_bird(
