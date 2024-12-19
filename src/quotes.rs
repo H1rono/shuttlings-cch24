@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 pub mod model;
-mod ops;
-mod repository;
+pub mod ops;
+pub mod repository;
 
 #[must_use]
 #[derive(Clone)]
