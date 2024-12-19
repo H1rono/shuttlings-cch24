@@ -1,6 +1,6 @@
 use std::{borrow::Cow, future::Future, sync::Arc};
 
-use crate::{cookie, handlers::auth_token, jwt};
+use crate::{bucket, cookie, handlers::auth_token, jwt};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash)]
 pub struct Builder<
@@ -268,10 +268,11 @@ impl
         let manifest_state = manifest::State::builder()
             .manifest_keyword(manifest_keyword)
             .build();
-        let milk = milk::State::builder()
+        let milk_bucket = bucket::MilkBucket::builder()
             .full(milk_full)
             .initial(milk_initial)
             .build();
+        let milk = milk::State::builder().bucket(milk_bucket).build();
         let auth_token = auth_token::State::builder()
             .jwt_manager(jwt_manager)
             .cookie_manager(cookie_manager)

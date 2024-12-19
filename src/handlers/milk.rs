@@ -13,9 +13,8 @@ pub struct State {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct Builder<Full = (), Initial = ()> {
-    full: Full,
-    initial: Initial,
+pub struct Builder<Bucket = ()> {
+    bucket: Bucket,
 }
 
 impl Builder {
@@ -24,28 +23,15 @@ impl Builder {
     }
 }
 
-impl<Full, Initial> Builder<Full, Initial> {
-    pub fn full(self, value: f32) -> Builder<f32, Initial> {
-        let Self { initial, .. } = self;
-        Builder {
-            full: value,
-            initial,
-        }
-    }
-
-    pub fn initial(self, value: f32) -> Builder<Full, f32> {
-        let Self { full, .. } = self;
-        Builder {
-            full,
-            initial: value,
-        }
+impl<Bucket> Builder<Bucket> {
+    pub fn bucket(self, value: MilkBucket) -> Builder<MilkBucket> {
+        Builder { bucket: value }
     }
 }
 
-impl Builder<f32, f32> {
+impl Builder<MilkBucket> {
     pub fn build(self) -> State {
-        let Self { full, initial } = self;
-        let bucket = MilkBucket::builder().full(full).initial(initial).build();
+        let Self { bucket } = self;
         State { bucket }
     }
 }
