@@ -25,7 +25,9 @@ pub struct UpdateRequest {
 impl Repository {
     #[tracing::instrument(skip_all)]
     pub async fn migrate(&self) -> Result<(), MigrateError> {
-        MIGRATOR.run(&self.inner.pool).await
+        MIGRATOR.run(&self.inner.pool).await?;
+        tracing::info!("Migration succeeded");
+        Ok(())
     }
 
     #[tracing::instrument(skip_all)]

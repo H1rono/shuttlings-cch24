@@ -19,7 +19,7 @@ async fn main(
     #[shuttle_shared_db::Postgres(
         local_uri = "postgres://{secrets.PG_USER}:{secrets.PG_PASSWORD}@localhost:5432/{secrets.PG_DATABASE}"
     )]
-    _pool: sqlx::PgPool,
+    pool: sqlx::PgPool,
 ) -> shuttle_warp::ShuttleWarp<(impl Reply,)> {
     let env_filter = EnvFilter::try_from_default_env()
         .context("from env failed")
@@ -32,6 +32,7 @@ async fn main(
     let jwt_manager = load_jwt_manager(&secrets)?;
     let cookie_manager = load_cookie_manager(&secrets)?;
     let jwt_decoder = load_jwt_decoder(&secrets).await?;
+    let _quotes_repo = load_quotes_repository(pool).await?;
     let state = lib::routes::State::builder()
         .seek_url(seek_url)
         .manifest_keyword(manifest_keyword)
@@ -107,4 +108,11 @@ async fn load_jwt_decoder(
         .context("failed to read pem file")?;
     let decoder = lib::jwt::Decoder::builder().pem(pem).build();
     Ok(decoder)
+}
+
+#[tracing::instrument(skip_all)]
+async fn load_quotes_repository(pool: sqlx::PgPool) -> anyhow::Result<lib::quotes::Repository> {
+    let repo = lib::quotes::Repository::builder().pool(pool).build();
+    repo.migrate().await?;
+    Ok(repo)
 }
