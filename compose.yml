@@ -1,0 +1,32 @@
+name: shuttlings-cch24
+
+services:
+  db:
+    image: postgres:17.2-bookworm
+    environment:
+      - POSTGRES_DB=cch24
+      - POSTGRES_PASSWORD=shuttlings
+    expose:
+      - 5432
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "cch24"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  dbgate:
+    image: "dbgate/dbgate:6.1.0"
+    environment:
+      - CONNECTIONS=db
+      - LABEL_db=Postgres
+      - SERVER_db=db
+      - USER_db=postgres
+      - PASSWORD_db=shuttlings
+      - PORT_db=5432
+      - DATABASE_db=cch24
+      - ENGINE_db=postgres@dbgate-plugin-postgres
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
