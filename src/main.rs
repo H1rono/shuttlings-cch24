@@ -36,7 +36,7 @@ async fn main(
     let jwt_manager = load_jwt_manager(&secrets)?;
     let cookie_manager = load_cookie_manager(&secrets)?;
     let jwt_decoder = load_jwt_decoder(&secrets).await?;
-    let _quotes_repo = load_quotes_repository(pool).await?;
+    let quotes_repo = load_quotes_repository(pool).await?;
     let state = lib::routes::State::builder()
         .seek_url(seek_url)
         .manifest_keyword(manifest_keyword)
@@ -44,6 +44,7 @@ async fn main(
         .jwt_manager(jwt_manager)
         .cookie_manager(cookie_manager)
         .jwt_decoder(jwt_decoder)
+        .quotes_repository(quotes_repo)
         .build();
     let _bg_task = tokio::spawn(state.bg_task());
     let route = lib::routes::make(state);
