@@ -1,9 +1,11 @@
 [deploy]
 include = [
-    "keys/*"
+    "keys/*",
+    "src/quotes/migrations/*",
 ]
 
 [build]
 assets = [
-    "keys/*"
+    "keys/*",
+    "src/quotes/migrations/*",
 ]
