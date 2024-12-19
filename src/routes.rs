@@ -1,5 +1,6 @@
 use std::{str::FromStr, sync::Arc};
 
+use uuid::Uuid;
 use warp::{http, hyper, Filter, Reply};
 
 use crate::handlers;
@@ -38,6 +39,7 @@ pub fn make(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::
         .or(jwt_wrap(state.clone()))
         .or(jwt_unwrap(state.clone()))
         .or(jwt_decode(state.clone()))
+        .or(quotes(state.clone()))
         .with(warp::filters::trace::request())
 }
 
@@ -271,4 +273,41 @@ fn jwt_decode(
         .map(move || Arc::clone(&auth_token))
         .and(warp::body::bytes())
         .and_then(handlers::jwt_decode)
+}
+
+fn quotes(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
+    let State { quotes, .. } = state;
+    let use_state = warp::any().map(move || Arc::clone(&quotes));
+    let reset = warp::path!("19" / "reset")
+        .and(warp::post())
+        .and(use_state.clone())
+        .and_then(handlers::quotes_reset);
+    let cite = warp::path!("19" / "cite" / Uuid)
+        .and(warp::get())
+        .map(handlers::quotes::CitePathParam::new)
+        .and(use_state.clone())
+        .map(|p, s| (s, p))
+        .untuple_one()
+        .and_then(handlers::quotes_cite);
+    let remove = warp::path!("19" / "remove" / Uuid)
+        .and(warp::delete())
+        .map(handlers::quotes::RemovePathParam::new)
+        .and(use_state.clone())
+        .map(|p, s| (s, p))
+        .untuple_one()
+        .and_then(handlers::quotes_remove);
+    let undo = warp::path!("19" / "undo" / Uuid)
+        .and(warp::put())
+        .map(handlers::quotes::UndoPathParam::new)
+        .and(use_state.clone())
+        .and(json::json_body::<handlers::quotes::UndoBody>())
+        .map(|p, s, b| (s, p, b))
+        .untuple_one()
+        .and_then(handlers::quotes_undo);
+    let draft = warp::path!("19" / "draft")
+        .and(warp::post())
+        .and(use_state.clone())
+        .and(json::json_body::<handlers::quotes::DraftBody>())
+        .and_then(handlers::quotes_draft);
+    reset.or(cite).or(remove).or(undo).or(draft)
 }

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 use warp::http::StatusCode;
 
 use crate::quotes;
@@ -41,6 +42,14 @@ pub(crate) struct CitePathParam {
     pub(super) id: quotes::model::QuoteId,
 }
 
+impl CitePathParam {
+    pub(crate) fn new(id: Uuid) -> Self {
+        Self {
+            id: quotes::model::QuoteId(id),
+        }
+    }
+}
+
 pub(super) async fn find_and_serialize_cite(
     state: &State,
     param: CitePathParam,
@@ -74,9 +83,25 @@ pub(crate) struct RemovePathParam {
     pub(super) id: quotes::model::QuoteId,
 }
 
+impl RemovePathParam {
+    pub(crate) fn new(id: Uuid) -> Self {
+        Self {
+            id: quotes::model::QuoteId(id),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub(crate) struct UndoPathParam {
     pub(super) id: quotes::model::QuoteId,
+}
+
+impl UndoPathParam {
+    pub(crate) fn new(id: Uuid) -> Self {
+        Self {
+            id: quotes::model::QuoteId(id),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
