@@ -16,6 +16,10 @@ macro_rules! get_secret {
 #[shuttle_runtime::main]
 async fn main(
     #[shuttle_runtime::Secrets] secrets: shuttle_runtime::SecretStore,
+    #[shuttle_shared_db::Postgres(
+        local_uri = "postgres://{secrets.PG_USER}:{secrets.PG_PASSWORD}@localhost:5432/{secrets.PG_DATABASE}"
+    )]
+    _pool: sqlx::PgPool,
 ) -> shuttle_warp::ShuttleWarp<(impl Reply,)> {
     let env_filter = EnvFilter::try_from_default_env()
         .context("from env failed")
