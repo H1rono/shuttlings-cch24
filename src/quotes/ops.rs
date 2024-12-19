@@ -41,7 +41,7 @@ impl Repository {
     #[tracing::instrument(skip_all)]
     pub async fn find_one(&self, id: QuoteId) -> sqlx::Result<Option<Quote>> {
         let query = format!(
-            r#"SELECT * FROM "{}" WHERE "{}" = ? LIMIT 1"#,
+            r#"SELECT * FROM "{}" WHERE "{}" = $1 LIMIT 1"#,
             Quote::TABLE_NAME,
             QuoteId::COLUMN_NAME
         );
@@ -58,7 +58,7 @@ impl Repository {
         let CreateRequest { author, quote } = request;
         let id = QuoteId(Uuid::new_v4());
         let query = format!(
-            r#"INSERT INTO "{}" ("{}", "{}", "{}") VALUES (?, ?, ?) RETURNING *"#,
+            r#"INSERT INTO "{}" ("{}", "{}", "{}") VALUES ($1, $2, $3) RETURNING *"#,
             Quote::TABLE_NAME,
             QuoteId::COLUMN_NAME,
             Author::COLUMN_NAME,
@@ -77,7 +77,7 @@ impl Repository {
     #[tracing::instrument(skip_all)]
     pub async fn delete_one(&self, id: QuoteId) -> sqlx::Result<Option<()>> {
         let query = format!(
-            r#"DELETE FROM "{}" WHERE "{}" = ? LIMIT 1"#,
+            r#"DELETE FROM "{}" WHERE "{}" = $1 LIMIT 1"#,
             Quote::TABLE_NAME,
             QuoteId::COLUMN_NAME
         );
@@ -98,8 +98,8 @@ impl Repository {
         let query = format!(
             r#"
                 UPDATE "{table}"
-                SET "{author}" = ?, "{quote}" = ?, "{version}" = "{version}" + 1
-                WHERE "{id}" = ?
+                SET "{author}" = $1, "{quote}" = $2, "{version}" = "{version}" + 1
+                WHERE "{id}" = $3
                 RETURNING *
             "#,
             table = Quote::TABLE_NAME,
