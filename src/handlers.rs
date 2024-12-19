@@ -414,7 +414,7 @@ pub async fn quotes_cite(
 }
 
 #[tracing::instrument(skip(state))]
-pub async fn quote_remove(
+pub async fn quotes_remove(
     state: Arc<quotes::State>,
     param: quotes::RemovePathParam,
 ) -> Result<Response, Infallible> {
