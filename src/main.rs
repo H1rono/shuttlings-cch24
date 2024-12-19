@@ -29,6 +29,10 @@ async fn main(
 
     let seek_url = get_secret!(secrets.SEEK_URL)?;
     let manifest_keyword = get_secret!(secrets.MANIFEST_KEYWORD)?;
+    let milk_bucket = lib::bucket::MilkBucket::builder()
+        .full(5.0)
+        .initial(0.0)
+        .build();
     let jwt_manager = load_jwt_manager(&secrets)?;
     let cookie_manager = load_cookie_manager(&secrets)?;
     let jwt_decoder = load_jwt_decoder(&secrets).await?;
@@ -36,8 +40,7 @@ async fn main(
     let state = lib::routes::State::builder()
         .seek_url(seek_url)
         .manifest_keyword(manifest_keyword)
-        .milk_full(5.0)
-        .milk_initial(0.0)
+        .milk_bucket(milk_bucket)
         .jwt_manager(jwt_manager)
         .cookie_manager(cookie_manager)
         .jwt_decoder(jwt_decoder)

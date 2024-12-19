@@ -6,16 +6,14 @@ use crate::{bucket, cookie, handlers::auth_token, jwt};
 pub struct Builder<
     SeekUrl = (),
     ManifestKeyword = (),
-    MilkFull = (),
-    MilkInitial = (),
+    MilkBucket = (),
     JwtManager = (),
     CookieManager = (),
     JwtDecoder = (),
 > {
     seek_url: SeekUrl,
     manifest_keyword: ManifestKeyword,
-    milk_full: MilkFull,
-    milk_initial: MilkInitial,
+    milk_bucket: MilkBucket,
     jwt_manager: JwtManager,
     cookie_manager: CookieManager,
     jwt_decoder: JwtDecoder,
@@ -27,28 +25,19 @@ impl Builder {
     }
 }
 
-impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager, JwtDecoder>
-    Builder<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager, JwtDecoder>
+impl<SeekUrl, ManifestKeyword, MilkBucket, JwtManager, CookieManager, JwtDecoder>
+    Builder<SeekUrl, ManifestKeyword, MilkBucket, JwtManager, CookieManager, JwtDecoder>
 {
     pub fn seek_url<'s, S>(
         self,
         value: S,
-    ) -> Builder<
-        String,
-        ManifestKeyword,
-        MilkFull,
-        MilkInitial,
-        JwtManager,
-        CookieManager,
-        JwtDecoder,
-    >
+    ) -> Builder<String, ManifestKeyword, MilkBucket, JwtManager, CookieManager, JwtDecoder>
     where
         S: Into<Cow<'s, str>>,
     {
         let Self {
             manifest_keyword,
-            milk_full,
-            milk_initial,
+            milk_bucket,
             jwt_manager,
             cookie_manager,
             jwt_decoder,
@@ -58,8 +47,7 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager,
         Builder {
             seek_url,
             manifest_keyword,
-            milk_full,
-            milk_initial,
+            milk_bucket,
             jwt_manager,
             cookie_manager,
             jwt_decoder,
@@ -69,14 +57,13 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager,
     pub fn manifest_keyword<'s, S>(
         self,
         value: S,
-    ) -> Builder<SeekUrl, String, MilkFull, MilkInitial, JwtManager, CookieManager, JwtDecoder>
+    ) -> Builder<SeekUrl, String, MilkBucket, JwtManager, CookieManager, JwtDecoder>
     where
         S: Into<Cow<'s, str>>,
     {
         let Self {
             seek_url,
-            milk_full,
-            milk_initial,
+            milk_bucket,
             jwt_manager,
             cookie_manager,
             jwt_decoder,
@@ -86,23 +73,21 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager,
         Builder {
             seek_url,
             manifest_keyword,
-            milk_full,
-            milk_initial,
+            milk_bucket,
             jwt_manager,
             cookie_manager,
             jwt_decoder,
         }
     }
 
-    pub fn milk_full(
+    pub fn milk_bucket(
         self,
-        value: f32,
-    ) -> Builder<SeekUrl, ManifestKeyword, f32, MilkInitial, JwtManager, CookieManager, JwtDecoder>
+        value: bucket::MilkBucket,
+    ) -> Builder<SeekUrl, ManifestKeyword, bucket::MilkBucket, JwtManager, CookieManager, JwtDecoder>
     {
         let Self {
             seek_url,
             manifest_keyword,
-            milk_initial,
             jwt_manager,
             cookie_manager,
             jwt_decoder,
@@ -111,33 +96,7 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager,
         Builder {
             seek_url,
             manifest_keyword,
-            milk_full: value,
-            milk_initial,
-            jwt_manager,
-            cookie_manager,
-            jwt_decoder,
-        }
-    }
-
-    pub fn milk_initial(
-        self,
-        value: f32,
-    ) -> Builder<SeekUrl, ManifestKeyword, MilkFull, f32, JwtManager, CookieManager, JwtDecoder>
-    {
-        let Self {
-            seek_url,
-            manifest_keyword,
-            milk_full,
-            jwt_manager,
-            cookie_manager,
-            jwt_decoder,
-            ..
-        } = self;
-        Builder {
-            seek_url,
-            manifest_keyword,
-            milk_full,
-            milk_initial: value,
+            milk_bucket: value,
             jwt_manager,
             cookie_manager,
             jwt_decoder,
@@ -147,20 +106,12 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager,
     pub fn jwt_manager(
         self,
         value: jwt::Manager,
-    ) -> Builder<
-        SeekUrl,
-        ManifestKeyword,
-        MilkFull,
-        MilkInitial,
-        jwt::Manager,
-        CookieManager,
-        JwtDecoder,
-    > {
+    ) -> Builder<SeekUrl, ManifestKeyword, MilkBucket, jwt::Manager, CookieManager, JwtDecoder>
+    {
         let Self {
             seek_url,
             manifest_keyword,
-            milk_full,
-            milk_initial,
+            milk_bucket,
             cookie_manager,
             jwt_decoder,
             ..
@@ -168,8 +119,7 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager,
         Builder {
             seek_url,
             manifest_keyword,
-            milk_full,
-            milk_initial,
+            milk_bucket,
             jwt_manager: value,
             cookie_manager,
             jwt_decoder,
@@ -179,20 +129,12 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager,
     pub fn cookie_manager(
         self,
         value: cookie::Manager,
-    ) -> Builder<
-        SeekUrl,
-        ManifestKeyword,
-        MilkFull,
-        MilkInitial,
-        JwtManager,
-        cookie::Manager,
-        JwtDecoder,
-    > {
+    ) -> Builder<SeekUrl, ManifestKeyword, MilkBucket, JwtManager, cookie::Manager, JwtDecoder>
+    {
         let Self {
             seek_url,
             manifest_keyword,
-            milk_full,
-            milk_initial,
+            milk_bucket,
             jwt_manager,
             jwt_decoder,
             ..
@@ -200,8 +142,7 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager,
         Builder {
             seek_url,
             manifest_keyword,
-            milk_full,
-            milk_initial,
+            milk_bucket,
             jwt_manager,
             cookie_manager: value,
             jwt_decoder,
@@ -211,20 +152,12 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager,
     pub fn jwt_decoder(
         self,
         value: jwt::Decoder,
-    ) -> Builder<
-        SeekUrl,
-        ManifestKeyword,
-        MilkFull,
-        MilkInitial,
-        JwtManager,
-        CookieManager,
-        jwt::Decoder,
-    > {
+    ) -> Builder<SeekUrl, ManifestKeyword, MilkBucket, JwtManager, CookieManager, jwt::Decoder>
+    {
         let Self {
             seek_url,
             manifest_keyword,
-            milk_full,
-            milk_initial,
+            milk_bucket,
             jwt_manager,
             cookie_manager,
             ..
@@ -232,8 +165,7 @@ impl<SeekUrl, ManifestKeyword, MilkFull, MilkInitial, JwtManager, CookieManager,
         Builder {
             seek_url,
             manifest_keyword,
-            milk_full,
-            milk_initial,
+            milk_bucket,
             jwt_manager,
             cookie_manager,
             jwt_decoder: value,
@@ -245,8 +177,7 @@ impl
     Builder<
         String,
         String,
-        f32,
-        f32,
+        bucket::MilkBucket,
         crate::jwt::Manager,
         crate::cookie::Manager,
         crate::jwt::Decoder,
@@ -258,8 +189,7 @@ impl
         let Self {
             seek_url,
             manifest_keyword,
-            milk_full,
-            milk_initial,
+            milk_bucket,
             jwt_manager,
             cookie_manager,
             jwt_decoder,
@@ -267,10 +197,6 @@ impl
         let seek_state = seek::State::builder().seek_url(seek_url).build();
         let manifest_state = manifest::State::builder()
             .manifest_keyword(manifest_keyword)
-            .build();
-        let milk_bucket = bucket::MilkBucket::builder()
-            .full(milk_full)
-            .initial(milk_initial)
             .build();
         let milk = milk::State::builder().bucket(milk_bucket).build();
         let auth_token = auth_token::State::builder()
