@@ -17,6 +17,7 @@ pub(crate) mod ipv6_dest;
 pub(crate) mod ipv6_key;
 pub(crate) mod manifest;
 pub(crate) mod milk;
+pub(crate) mod quotes;
 pub(crate) mod seek;
 
 type Response<B = hyper::Body> = http::Response<B>;
@@ -366,5 +367,161 @@ pub async fn jwt_decode(
         .header(http::header::CONTENT_TYPE, "application/json")
         .body(hyper::Body::from(body))
         .unwrap();
+    Ok(res)
+}
+
+// MARK: quotes
+
+#[tracing::instrument(skip_all)]
+pub async fn quotes_reset(state: Arc<quotes::State>) -> Result<Response, Infallible> {
+    let status = match state.repository.reset().await {
+        Ok(()) => {
+            tracing::info!("quotes reseted");
+            http::StatusCode::OK
+        }
+        Err(e) => {
+            tracing::error!(
+                err = &e as &dyn std::error::Error,
+                "resetting quotes failed"
+            );
+            http::StatusCode::INTERNAL_SERVER_ERROR
+        }
+    };
+    let res = Response::builder()
+        .status(status)
+        .body(hyper::Body::empty())
+        .unwrap();
+    Ok(res)
+}
+
+#[tracing::instrument(skip(state))]
+pub async fn quotes_cite(
+    state: Arc<quotes::State>,
+    param: quotes::CitePathParam,
+) -> Result<Response, Infallible> {
+    let res = match quotes::find_and_serialize_cite(&state, param).await {
+        Ok(body) => Response::builder()
+            .status(http::StatusCode::OK)
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .body(hyper::Body::from(body))
+            .unwrap(),
+        Err(status) => Response::builder()
+            .status(status)
+            .body(hyper::Body::empty())
+            .unwrap(),
+    };
+    Ok(res)
+}
+
+#[tracing::instrument(skip(state))]
+pub async fn quote_remove(
+    state: Arc<quotes::State>,
+    param: quotes::RemovePathParam,
+) -> Result<Response, Infallible> {
+    let quotes::RemovePathParam { id } = param;
+    let status = match state.repository.delete_one(id).await {
+        Ok(Some(())) => {
+            tracing::info!("Removed one quote");
+            http::StatusCode::OK
+        }
+        Ok(None) => {
+            tracing::info!("No matching quote found");
+            http::StatusCode::NOT_FOUND
+        }
+        Err(e) => {
+            tracing::error!(
+                err = &e as &dyn std::error::Error,
+                "Failed to delete one quote"
+            );
+            http::StatusCode::INTERNAL_SERVER_ERROR
+        }
+    };
+    let res = Response::builder()
+        .status(status)
+        .body(hyper::Body::empty())
+        .unwrap();
+    Ok(res)
+}
+
+#[tracing::instrument(skip(state, body))]
+pub async fn quotes_undo(
+    state: Arc<quotes::State>,
+    param: quotes::UndoPathParam,
+    body: quotes::UndoBody,
+) -> Result<Response, Infallible> {
+    let res = match state.undo_aka_update(param, body).await {
+        Ok(Some(quote)) => {
+            tracing::info!("Updated one quote");
+            serde_json::to_string(&quote).map_err(|e| {
+                tracing::error!(
+                    err = &e as &dyn std::error::Error,
+                    ?quote,
+                    "Failed to serialize quote"
+                );
+                http::StatusCode::INTERNAL_SERVER_ERROR
+            })
+        }
+        Ok(None) => {
+            tracing::info!("No matching quote found");
+            Err(http::StatusCode::NOT_FOUND)
+        }
+        Err(e) => {
+            tracing::error!(
+                err = &e as &dyn std::error::Error,
+                "Failed to update one quote"
+            );
+            Err(http::StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    };
+    let res = match res {
+        Ok(body) => Response::builder()
+            .status(http::StatusCode::OK)
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .body(hyper::Body::from(body))
+            .unwrap(),
+        Err(status) => Response::builder()
+            .status(status)
+            .body(hyper::Body::empty())
+            .unwrap(),
+    };
+    Ok(res)
+}
+
+#[tracing::instrument(skip_all)]
+pub async fn quotes_draft(
+    state: Arc<quotes::State>,
+    body: quotes::DraftBody,
+) -> Result<Response, Infallible> {
+    let res = match state.repository.create(body.into()).await {
+        Ok(quote) => {
+            tracing::info!("Created one quote");
+            serde_json::to_string(&quote).map_err(|e| {
+                tracing::error!(
+                    err = &e as &dyn std::error::Error,
+                    ?quote,
+                    "Failed to serialize quote"
+                );
+                http::StatusCode::INTERNAL_SERVER_ERROR
+            })
+        }
+        Err(e) => {
+            tracing::error!(
+                err = &e as &dyn std::error::Error,
+                "Failed to create a quote"
+            );
+            Err(http::StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    };
+    let res = match res {
+        Ok(body) => Response::builder()
+            .status(http::StatusCode::OK)
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .body(hyper::Body::from(body))
+            .unwrap(),
+        Err(status) => Response::builder()
+            .status(status)
+            .body(hyper::Body::empty())
+            .unwrap(),
+    };
     Ok(res)
 }
