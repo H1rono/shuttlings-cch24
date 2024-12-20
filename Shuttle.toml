@@ -1,11 +1,9 @@
 [deploy]
 include = [
     "keys/*",
-    "migrations/*",
 ]
 
 [build]
 assets = [
     "keys/*",
-    "migrations/*",
 ]
