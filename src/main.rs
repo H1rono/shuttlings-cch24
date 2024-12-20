@@ -27,6 +27,8 @@ async fn main(
         .unwrap_or_else(|_| "info".into());
     tracing_subscriber::fmt().with_env_filter(env_filter).init();
 
+    migrate(&pool).await?;
+
     let seek_url = get_secret!(secrets.SEEK_URL)?;
     let manifest_keyword = get_secret!(secrets.MANIFEST_KEYWORD)?;
     let milk_bucket = lib::bucket::MilkBucket::builder()
@@ -36,7 +38,7 @@ async fn main(
     let jwt_manager = load_jwt_manager(&secrets)?;
     let cookie_manager = load_cookie_manager(&secrets)?;
     let jwt_decoder = load_jwt_decoder(&secrets).await?;
-    let quotes_repo = load_quotes_repository(pool).await?;
+    let quotes_repo = lib::quotes::Repository::builder().pool(pool).build();
     let state = lib::routes::State::builder()
         .seek_url(seek_url)
         .manifest_keyword(manifest_keyword)
@@ -49,6 +51,16 @@ async fn main(
     let _bg_task = tokio::spawn(state.bg_task());
     let route = lib::routes::make(state);
     Ok(route.boxed().into())
+}
+
+#[tracing::instrument(skip_all)]
+async fn migrate(pool: &sqlx::PgPool) -> anyhow::Result<()> {
+    sqlx::migrate!()
+        .run(pool)
+        .await
+        .context("Migration failed")?;
+    tracing::info!("Migration success");
+    Ok(())
 }
 
 #[tracing::instrument(skip_all)]
@@ -112,11 +124,4 @@ async fn load_jwt_decoder(
         .context("failed to read pem file")?;
     let decoder = lib::jwt::Decoder::builder().pem(pem).build();
     Ok(decoder)
-}
-
-#[tracing::instrument(skip_all)]
-async fn load_quotes_repository(pool: sqlx::PgPool) -> anyhow::Result<lib::quotes::Repository> {
-    let repo = lib::quotes::Repository::builder().pool(pool).build();
-    repo.migrate().await?;
-    Ok(repo)
 }

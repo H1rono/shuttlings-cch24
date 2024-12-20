@@ -1,11 +1,8 @@
 use serde::{Deserialize, Serialize};
-use sqlx::migrate::{MigrateError, Migrator};
 use uuid::Uuid;
 
 use super::model::{Author, Quote, QuoteId, QuoteText, Version};
 use super::Repository;
-
-pub static MIGRATOR: Migrator = sqlx::migrate!("src/quotes/migrations");
 
 #[must_use]
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -23,13 +20,6 @@ pub struct UpdateRequest {
 }
 
 impl Repository {
-    #[tracing::instrument(skip_all)]
-    pub async fn migrate(&self) -> Result<(), MigrateError> {
-        MIGRATOR.run(&self.inner.pool).await?;
-        tracing::info!("Migration succeeded");
-        Ok(())
-    }
-
     #[tracing::instrument(skip_all)]
     pub async fn reset(&self) -> sqlx::Result<()> {
         let query = format!(r#"DELETE FROM "{}""#, Quote::TABLE_NAME);
