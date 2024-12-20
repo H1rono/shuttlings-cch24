@@ -55,10 +55,8 @@ async fn main(
 
 #[tracing::instrument(skip_all)]
 async fn migrate(pool: &sqlx::PgPool) -> anyhow::Result<()> {
-    sqlx::migrate!()
-        .run(pool)
-        .await
-        .context("Migration failed")?;
+    tracing::info!(migrator = ?lib::MIGRATOR, "Start migration");
+    lib::MIGRATOR.run(pool).await.context("Migration failed")?;
     tracing::info!("Migration success");
     Ok(())
 }

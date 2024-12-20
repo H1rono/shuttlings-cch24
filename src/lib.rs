@@ -5,3 +5,5 @@ pub mod handlers;
 pub mod jwt;
 pub mod quotes;
 pub mod routes;
+
+pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!();
