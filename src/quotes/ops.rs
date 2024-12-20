@@ -65,9 +65,9 @@ impl Repository {
     }
 
     #[tracing::instrument(skip_all)]
-    pub async fn delete_one(&self, id: QuoteId) -> sqlx::Result<Option<()>> {
+    pub async fn delete_one(&self, id: QuoteId) -> sqlx::Result<Option<Quote>> {
         let query = format!(
-            r#"DELETE FROM "{}" WHERE "{}" = $1 LIMIT 1"#,
+            r#"DELETE FROM "{}" WHERE "{}" = $1 RETURNING *"#,
             Quote::TABLE_NAME,
             QuoteId::COLUMN_NAME
         );
@@ -75,7 +75,7 @@ impl Repository {
             .bind(id)
             .fetch_optional(&self.inner.pool)
             .await?;
-        Ok(quote.map(|_| ()))
+        Ok(quote)
     }
 
     #[tracing::instrument(skip_all)]

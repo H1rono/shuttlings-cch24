@@ -419,27 +419,40 @@ pub async fn quotes_remove(
     param: quotes::RemovePathParam,
 ) -> Result<Response, Infallible> {
     let quotes::RemovePathParam { id } = param;
-    let status = match state.repository.delete_one(id).await {
-        Ok(Some(())) => {
+    let res = match state.repository.delete_one(id).await {
+        Ok(Some(quote)) => {
             tracing::info!("Removed one quote");
-            http::StatusCode::OK
+            serde_json::to_string(&quote).map_err(|e| {
+                tracing::error!(
+                    err = &e as &dyn std::error::Error,
+                    "Failed to serialize quote"
+                );
+                http::StatusCode::INTERNAL_SERVER_ERROR
+            })
         }
         Ok(None) => {
             tracing::info!("No matching quote found");
-            http::StatusCode::NOT_FOUND
+            Err(http::StatusCode::NOT_FOUND)
         }
         Err(e) => {
             tracing::error!(
                 err = &e as &dyn std::error::Error,
                 "Failed to delete one quote"
             );
-            http::StatusCode::INTERNAL_SERVER_ERROR
+            Err(http::StatusCode::INTERNAL_SERVER_ERROR)
         }
     };
-    let res = Response::builder()
-        .status(status)
-        .body(hyper::Body::empty())
-        .unwrap();
+    let res = match res {
+        Ok(body) => Response::builder()
+            .status(http::StatusCode::OK)
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .body(hyper::Body::from(body))
+            .unwrap(),
+        Err(status) => Response::builder()
+            .status(status)
+            .body(hyper::Body::empty())
+            .unwrap(),
+    };
     Ok(res)
 }
 
@@ -514,7 +527,7 @@ pub async fn quotes_draft(
     };
     let res = match res {
         Ok(body) => Response::builder()
-            .status(http::StatusCode::OK)
+            .status(http::StatusCode::CREATED)
             .header(http::header::CONTENT_TYPE, "application/json")
             .body(hyper::Body::from(body))
             .unwrap(),
