@@ -338,5 +338,10 @@ fn quotes(state: State) -> impl Filter<Extract = (impl Reply,), Error = warp::Re
         .and(use_state.clone())
         .and(json::json_body::<handlers::quotes::DraftBody>())
         .and_then(handlers::quotes_draft);
-    reset.or(cite).or(remove).or(undo).or(draft)
+    let list = warp::path!("19" / "list")
+        .and(warp::get())
+        .and(use_state.clone())
+        .and(warp::query::<handlers::quotes::ListQuery>())
+        .and_then(handlers::quotes_list);
+    reset.or(cite).or(remove).or(undo).or(draft).or(list)
 }

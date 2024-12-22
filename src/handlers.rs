@@ -538,3 +538,52 @@ pub async fn quotes_draft(
     };
     Ok(res)
 }
+
+#[tracing::instrument(skip_all)]
+pub async fn quotes_list(
+    state: Arc<quotes::State>,
+    query: quotes::ListQuery,
+) -> Result<Response, Infallible> {
+    use crate::quotes::ops::ListError;
+
+    let quotes::ListQuery { next_token } = query;
+    let res = match state.repository.list(next_token.as_deref()).await {
+        Ok(Some(b)) => {
+            tracing::info!("Listed quotes");
+            serde_json::to_string(&b).map_err(|e| {
+                tracing::error!(
+                    err = &e as &dyn std::error::Error,
+                    "Failed to serialize response"
+                );
+                http::StatusCode::INTERNAL_SERVER_ERROR
+            })
+        }
+        Ok(None) => {
+            tracing::info!("No matching quote against next_token found");
+            Err(http::StatusCode::NOT_FOUND)
+        }
+        Err(ListError::Token(e)) => {
+            tracing::info!(
+                err = &e as &dyn std::error::Error,
+                "Bad next_token provided"
+            );
+            Err(http::StatusCode::BAD_REQUEST)
+        }
+        Err(ListError::Database(e)) => {
+            tracing::error!(err = &e as &dyn std::error::Error, "Failed to list quotes");
+            Err(http::StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    };
+    let res = match res {
+        Ok(body) => Response::builder()
+            .status(http::StatusCode::OK)
+            .header(http::header::CONTENT_TYPE, "application/json")
+            .body(hyper::Body::from(body))
+            .unwrap(),
+        Err(status) => Response::builder()
+            .status(status)
+            .body(hyper::Body::empty())
+            .unwrap(),
+    };
+    Ok(res)
+}
