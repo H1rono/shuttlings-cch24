@@ -138,5 +138,5 @@ impl From<DraftBody> for quotes::ops::CreateRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub struct ListQuery {
-    pub(super) next_token: Option<String>,
+    pub(super) token: Option<String>,
 }

@@ -546,7 +546,7 @@ pub async fn quotes_list(
 ) -> Result<Response, Infallible> {
     use crate::quotes::ops::ListError;
 
-    let quotes::ListQuery { next_token } = query;
+    let quotes::ListQuery { token: next_token } = query;
     let res = match state.repository.list(next_token.as_deref()).await {
         Ok(Some(b)) => {
             tracing::info!("Listed quotes");
@@ -559,8 +559,8 @@ pub async fn quotes_list(
             })
         }
         Ok(None) => {
-            tracing::info!("No matching quote against next_token found");
-            Err(http::StatusCode::NOT_FOUND)
+            tracing::info!(next_token, "No matching quote against next_token found");
+            Err(http::StatusCode::BAD_REQUEST)
         }
         Err(ListError::Token(e)) => {
             tracing::info!(
